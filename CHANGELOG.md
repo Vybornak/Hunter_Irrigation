@@ -6,6 +6,11 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.5] - 2026-05-13
+
+### Opraveno
+- Oprava HACS instalace: dvojitá složka (`hunter_irrigation/hunter_irrigation/`) odstraněna změnou `content_in_root: true`.
+
 ## [1.0.4] - 2026-05-13
 
 ### Opraveno
