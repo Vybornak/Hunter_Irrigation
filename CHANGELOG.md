@@ -6,6 +6,18 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.3] - 2026-05-13
+
+### Přidáno
+- Konfigurační průvodce (UI `config_flow`) pro nastavení integrace bez úprav `configuration.yaml`.
+- Options flow pro pozdější úpravu počtu zón, ventilů a dešťových senzorů přímo z UI Home Assistantu.
+- Lokalizace průvodce (`strings.json`, `translations/cs.json`, `translations/en.json`).
+
+### Změněno
+- Integrace nyní běží přes `config entry` (`async_setup_entry`) místo YAML-only konfigurace.
+- Platformy `number` a `switch` byly upraveny na setup přes config entry.
+- Příklady konfigurace a dashboardu byly synchronizovány s reálnými entitami instalace.
+
 ## [1.0.2] - 2026-05-13
 
 ### Opraveno
