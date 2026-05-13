@@ -6,6 +6,15 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.9] - 2026-05-13
+
+### Přidáno
+- Nové senzory srážek pro dashboard přehled: včera, předevčírem a součet za posledních 7 dní.
+
+### Změněno
+- Lokalizované názvy entit přes překlady (čeština/angličtina podle jazyka Home Assistantu).
+- Dashboard example přepsán do formátu `sections`, aby šel vložit do aktuálního Raw editoru pohledu.
+
 ## [1.0.8] - 2026-05-13
 
 ### Opraveno

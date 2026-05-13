@@ -59,5 +59,34 @@
         }
       }
     }
+  },
+  "entity": {
+    "switch": {
+      "manual_override": {
+        "name": "Manual override"
+      },
+      "simulate": {
+        "name": "Simulation"
+      }
+    },
+    "number": {
+      "zone_duration": {
+        "name": "{zone_name} duration"
+      },
+      "rain_threshold": {
+        "name": "Rain threshold"
+      }
+    },
+    "sensor": {
+      "rain_yesterday": {
+        "name": "Rain yesterday"
+      },
+      "rain_day_before_yesterday": {
+        "name": "Rain day before yesterday"
+      },
+      "rain_last_7_days_total": {
+        "name": "Rain last 7 days"
+      }
+    }
   }
 }

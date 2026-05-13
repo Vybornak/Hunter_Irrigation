@@ -1,56 +1,67 @@
-# Hunter Irrigation dashboard example
+# Hunter Irrigation dashboard example for "Sections" view.
 #
-# Paste this into Dashboard -> Raw configuration editor.
+# Paste into one VIEW raw editor (not whole dashboard YAML).
 #
-# IMPORTANT:
-# 1) Replace placeholder valve entities (valve.irrigation_zone_1, valve.irrigation_zone_2)
-#    with the exact zone entities you configured in integration setup.
-# 2) Replace zone duration entities according to your zone names.
-#    Entity format is: number.hunter_irrigation_<slugified_zone_name>_duration
-#    Example: zone name "Front Lawn" -> number.hunter_irrigation_front_lawn_duration
-# 3) Rain sensors are optional. Remove cards if you do not use these entities.
+# Replace placeholders:
+# - valve.irrigation_zone_1 / valve.irrigation_zone_2
+# - number.hunter_irrigation_zone_1_duration / zone_2_duration
+#
+# Optional cards can be removed if you do not use rain sensors.
 
+type: sections
+max_columns: 2
 title: Hunter Irrigation
-views:
-  - title: Irrigation
-    path: irrigation
-    icon: mdi:sprinkler-variant
+path: irrigation
+icon: mdi:sprinkler-variant
+cards: []
+sections:
+  - type: grid
     cards:
+      - type: heading
+        heading: Ovládání
+        icon: mdi:sprinkler-variant
+
       - type: entities
-        title: Runtime controls
+        title: Režim
         show_header_toggle: false
         entities:
           - entity: switch.hunter_irrigation_manual_override
-            name: Manual override
           - entity: switch.hunter_irrigation_simulation
-            name: Simulation
           - entity: number.hunter_irrigation_rain_threshold
-            name: Rain threshold (mm/day)
 
       - type: entities
-        title: Rain status (optional)
+        title: Přehled srážek
+        show_header_toggle: false
+        entities:
+          - entity: sensor.hunter_irrigation_rain_yesterday
+          - entity: sensor.hunter_irrigation_rain_day_before_yesterday
+          - entity: sensor.hunter_irrigation_rain_last_7_days_total
+
+      - type: entities
+        title: Srážkové senzory (volitelné)
         show_header_toggle: false
         entities:
           - entity: sensor.daily_rain_mm
-            name: Daily rain
+            name: Denní srážky
           - entity: sensor.instant_rain_mm
-            name: Instant rain
+            name: Okamžité srážky
           - entity: binary_sensor.rain_detected
-            name: Rain binary sensor
+            name: Dešťový senzor
 
       - type: entities
-        title: Zone durations
+        title: Délky zón
         show_header_toggle: false
         entities:
           - entity: number.hunter_irrigation_zone_1_duration
-            name: Zone 1 duration
           - entity: number.hunter_irrigation_zone_2_duration
-            name: Zone 2 duration
 
+      - type: tile
+        entity: valve.irrigation_zone_1
+        name: Zóna 1 ventil
       - type: horizontal-stack
         cards:
           - type: button
-            name: Start zone 1
+            name: Start zóna 1
             icon: mdi:play
             tap_action:
               action: call-service
@@ -58,7 +69,7 @@ views:
               data:
                 zone_entity: valve.irrigation_zone_1
           - type: button
-            name: Stop zone 1
+            name: Stop zóna 1
             icon: mdi:stop
             tap_action:
               action: call-service
@@ -66,7 +77,7 @@ views:
               data:
                 zone_entity: valve.irrigation_zone_1
           - type: button
-            name: Preview zone 1
+            name: Preview zóna 1
             icon: mdi:eye
             tap_action:
               action: call-service
@@ -74,10 +85,13 @@ views:
               data:
                 zone_entity: valve.irrigation_zone_1
 
+      - type: tile
+        entity: valve.irrigation_zone_2
+        name: Zóna 2 ventil
       - type: horizontal-stack
         cards:
           - type: button
-            name: Start zone 2
+            name: Start zóna 2
             icon: mdi:play
             tap_action:
               action: call-service
@@ -85,7 +99,7 @@ views:
               data:
                 zone_entity: valve.irrigation_zone_2
           - type: button
-            name: Stop zone 2
+            name: Stop zóna 2
             icon: mdi:stop
             tap_action:
               action: call-service
@@ -93,7 +107,7 @@ views:
               data:
                 zone_entity: valve.irrigation_zone_2
           - type: button
-            name: Preview zone 2
+            name: Preview zóna 2
             icon: mdi:eye
             tap_action:
               action: call-service

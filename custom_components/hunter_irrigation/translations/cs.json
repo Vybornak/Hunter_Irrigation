@@ -59,5 +59,34 @@
         }
       }
     }
+  },
+  "entity": {
+    "switch": {
+      "manual_override": {
+        "name": "Manuální override"
+      },
+      "simulate": {
+        "name": "Simulace"
+      }
+    },
+    "number": {
+      "zone_duration": {
+        "name": "{zone_name} délka zálivky"
+      },
+      "rain_threshold": {
+        "name": "Práh deště"
+      }
+    },
+    "sensor": {
+      "rain_yesterday": {
+        "name": "Srážky včera"
+      },
+      "rain_day_before_yesterday": {
+        "name": "Srážky předevčírem"
+      },
+      "rain_last_7_days_total": {
+        "name": "Srážky za posledních 7 dní"
+      }
+    }
   }
 }

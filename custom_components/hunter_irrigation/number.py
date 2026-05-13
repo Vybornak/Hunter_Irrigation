@@ -57,7 +57,8 @@ class HunterZoneDurationNumber(HunterBaseNumberEntity):
         self._zone_name = zone_name
         zone_slug = slugify(zone_name)
         self._attr_unique_id = f"hunter_irrigation_{zone_slug}_duration_min"
-        self._attr_name = f"{zone_name} duration"
+        self._attr_translation_key = "zone_duration"
+        self._attr_translation_placeholders = {"zone_name": zone_name}
         self.entity_id = f"number.hunter_irrigation_{zone_slug}_duration"
 
     @property
@@ -82,7 +83,7 @@ class HunterRainThresholdNumber(HunterBaseNumberEntity):
         super().__init__(entry_id)
         self._coordinator = coordinator
         self._attr_unique_id = "hunter_irrigation_rain_threshold_mm"
-        self._attr_name = "Rain threshold"
+        self._attr_translation_key = "rain_threshold"
         self.entity_id = "number.hunter_irrigation_rain_threshold"
 
     @property

@@ -23,14 +23,12 @@ async def async_setup_entry(
                 coordinator=coordinator,
                 entry_id=entry.entry_id,
                 key="manual_override",
-                name="Manual override",
                 icon="mdi:toggle-switch",
             ),
             HunterRuntimeFlagSwitch(
                 coordinator=coordinator,
                 entry_id=entry.entry_id,
                 key="simulate",
-                name="Simulation",
                 icon="mdi:eye-off",
             ),
         ]
@@ -47,12 +45,11 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
         coordinator: HunterIrrigation,
         entry_id: str,
         key: str,
-        name: str,
         icon: str,
     ) -> None:
         self._coordinator = coordinator
         self._key = key
-        self._attr_name = name
+        self._attr_translation_key = key
         self._attr_icon = icon
         self._attr_unique_id = f"hunter_irrigation_{key}"
         self.entity_id = f"switch.hunter_irrigation_{key}"

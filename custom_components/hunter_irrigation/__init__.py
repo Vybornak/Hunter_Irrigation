@@ -66,7 +66,7 @@ PREVIEW_ZONE_SERVICE_SCHEMA = vol.Schema(
     }
 )
 
-PLATFORMS = ["number", "switch"]
+PLATFORMS = ["number", "sensor", "switch"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> bool:
