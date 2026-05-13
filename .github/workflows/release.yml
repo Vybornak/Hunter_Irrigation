@@ -67,8 +67,7 @@ jobs:
       - name: Pack integration
         run: |
           mkdir -p dist
-          cd custom_components
-          zip -r ../dist/hunter_irrigation.zip hunter_irrigation
+          zip -r dist/hunter_irrigation.zip custom_components/hunter_irrigation
 
       - name: Build release notes from selected version
         env:
