@@ -115,13 +115,13 @@ jobs:
               except ValueError:
                   date_text = raw_date
 
-          header_line = f"[{version}]"
-          if date_text:
-              header_line += f" - {date_text}"
-
           body = "\n".join(body_lines).strip()
-          section = f"{header_line}\n\n{body}\n"
-          Path("RELEASE_NOTES.md").write_text(section, encoding="utf-8")
+            Path("RELEASE_NOTES.md").write_text(f"{body}\n", encoding="utf-8")
+
+            release_title = "Update"
+            if date_text:
+              release_title = date_text
+            Path("RELEASE_TITLE.txt").write_text(release_title, encoding="utf-8")
           PY
 
       - name: Create or update GitHub release
@@ -133,7 +133,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          TITLE="$(head -n1 RELEASE_NOTES.md)"
+          TITLE="$(cat RELEASE_TITLE.txt)"
           ASSET="dist/hunter_irrigation.zip"
 
           if gh release view "${VERSION}" >/dev/null 2>&1; then
