@@ -6,7 +6,7 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
-## [1.0] - 2026-05-13
+## [1.0.2] - 2026-05-13
 
 ### Opraveno
 - Opraven soubor `hacs.json` podle aktuálního schématu HACS (odstraněn nepodporovaný klíč `domains`).
