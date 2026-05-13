@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant import config_entries
-from homeassistant.components.recorder import get_instance, history
+from homeassistant.components.recorder import history
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.const import UnitOfPrecipitationDepth
 from homeassistant.core import HomeAssistant
@@ -51,7 +51,7 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
             hass,
             _LOGGER,
             name="hunter_irrigation_rain_stats",
-            update_interval=timedelta(hours=1),
+            update_interval=timedelta(minutes=15),
         )
         self._entity_id = entity_id
 
@@ -64,20 +64,17 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
             start_utc = dt_util.as_utc(week_start)
             end_utc = dt_util.as_utc(today_start)
 
-            def _load_history() -> list[Any]:
-                states_by_entity = history.get_significant_states(
-                    self.hass,
-                    start_utc,
-                    end_utc,
-                    [self._entity_id],
-                    include_start_time_state=False,
-                    significant_changes_only=False,
-                    minimal_response=True,
-                    no_attributes=True,
-                )
-                return states_by_entity.get(self._entity_id, [])
-
-            states = await get_instance(self.hass).async_add_executor_job(_load_history)
+            states_by_entity = await history.get_significant_states(
+                self.hass,
+                start_utc,
+                end_utc,
+                [self._entity_id],
+                include_start_time_state=True,
+                significant_changes_only=False,
+                minimal_response=False,
+                no_attributes=True,
+            )
+            states = states_by_entity.get(self._entity_id, [])
 
             daily_max: dict[Any, float] = {}
             for state in states:
@@ -105,7 +102,7 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
                 "rain_last_7_days_total": round(last_7_days_total, 2),
             }
         except Exception as err:  # pragma: no cover
-            _LOGGER.debug("Failed to calculate rain stats: %s", err)
+            _LOGGER.warning("Failed to calculate rain stats: %s", err)
             return {
                 "rain_yesterday": None,
                 "rain_day_before_yesterday": None,

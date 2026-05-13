@@ -6,6 +6,13 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.11] - 2026-05-13
+
+### Opraveno
+- Opraven výpočet rain souhrnů (včera, předevčírem, posledních 7 dní).
+- Dashboard example upraven podle reálně dostupných entit a služeb.
+- Release poznámky už neobsahují duplicitní nadpis verze v těle textu.
+
 ## [1.0.10] - 2026-05-13
 
 ### Opraveno

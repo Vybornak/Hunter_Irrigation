@@ -1,33 +1,35 @@
-# Hunter Irrigation dashboard example for "Sections" view.
-#
+# Hunter Irrigation dashboard tailored to your current entity list.
 # Paste into one VIEW raw editor (not whole dashboard YAML).
-#
-# Replace placeholders:
-# - valve.irrigation_zone_1 / valve.irrigation_zone_2
-# - number.hunter_irrigation_zone_1_duration / zone_2_duration
-#
-# Optional cards can be removed if you do not use rain sensors.
 
 type: sections
 max_columns: 2
 title: Hunter Irrigation
-path: irrigation
+path: hunter-irrigation
 icon: mdi:sprinkler-variant
 cards: []
 sections:
   - type: grid
     cards:
       - type: heading
-        heading: Ovládání
+        heading: Hunter Ovládání
         icon: mdi:sprinkler-variant
 
       - type: entities
-        title: Režim
+        title: Režim a ochrany
         show_header_toggle: false
         entities:
           - entity: switch.hunter_irrigation_manual_override
-          - entity: switch.hunter_irrigation_simulation
+          - entity: switch.hunter_irrigation_simulate
           - entity: number.hunter_irrigation_rain_threshold
+          - entity: binary_sensor.vyborny_premyslovice_destovy_senzor
+
+      - type: entities
+        title: Délky zón
+        show_header_toggle: false
+        entities:
+          - entity: number.hunter_irrigation_zone_1_duration
+          - entity: number.hunter_irrigation_zone_2_duration
+          - entity: number.hunter_irrigation_zone_3_duration
 
       - type: entities
         title: Přehled srážek
@@ -36,28 +38,9 @@ sections:
           - entity: sensor.hunter_irrigation_rain_yesterday
           - entity: sensor.hunter_irrigation_rain_day_before_yesterday
           - entity: sensor.hunter_irrigation_rain_last_7_days_total
+          - entity: sensor.weather_station_sws_12500_denni_uhrn_srazek
+          - entity: sensor.weather_station_sws_12500_srazky
 
-      - type: entities
-        title: Srážkové senzory (volitelné)
-        show_header_toggle: false
-        entities:
-          - entity: sensor.daily_rain_mm
-            name: Denní srážky
-          - entity: sensor.instant_rain_mm
-            name: Okamžité srážky
-          - entity: binary_sensor.rain_detected
-            name: Dešťový senzor
-
-      - type: entities
-        title: Délky zón
-        show_header_toggle: false
-        entities:
-          - entity: number.hunter_irrigation_zone_1_duration
-          - entity: number.hunter_irrigation_zone_2_duration
-
-      - type: tile
-        entity: valve.irrigation_zone_1
-        name: Zóna 1 ventil
       - type: horizontal-stack
         cards:
           - type: button
@@ -67,7 +50,7 @@ sections:
               action: call-service
               service: hunter_irrigation.start_zone
               data:
-                zone_entity: valve.irrigation_zone_1
+                zone_entity: valve.travnik_1
           - type: button
             name: Stop zóna 1
             icon: mdi:stop
@@ -75,7 +58,7 @@ sections:
               action: call-service
               service: hunter_irrigation.stop_zone
               data:
-                zone_entity: valve.irrigation_zone_1
+                zone_entity: valve.travnik_1
           - type: button
             name: Preview zóna 1
             icon: mdi:eye
@@ -83,11 +66,8 @@ sections:
               action: call-service
               service: hunter_irrigation.preview_zone
               data:
-                zone_entity: valve.irrigation_zone_1
+                zone_entity: valve.travnik_1
 
-      - type: tile
-        entity: valve.irrigation_zone_2
-        name: Zóna 2 ventil
       - type: horizontal-stack
         cards:
           - type: button
@@ -97,7 +77,7 @@ sections:
               action: call-service
               service: hunter_irrigation.start_zone
               data:
-                zone_entity: valve.irrigation_zone_2
+                zone_entity: valve.travnik_2
           - type: button
             name: Stop zóna 2
             icon: mdi:stop
@@ -105,7 +85,7 @@ sections:
               action: call-service
               service: hunter_irrigation.stop_zone
               data:
-                zone_entity: valve.irrigation_zone_2
+                zone_entity: valve.travnik_2
           - type: button
             name: Preview zóna 2
             icon: mdi:eye
@@ -113,4 +93,53 @@ sections:
               action: call-service
               service: hunter_irrigation.preview_zone
               data:
-                zone_entity: valve.irrigation_zone_2
+                zone_entity: valve.travnik_2
+
+      - type: horizontal-stack
+        cards:
+          - type: button
+            name: Start zóna 3
+            icon: mdi:play
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.start_zone
+              data:
+                zone_entity: valve.travnik_3
+          - type: button
+            name: Stop zóna 3
+            icon: mdi:stop
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.stop_zone
+              data:
+                zone_entity: valve.travnik_3
+          - type: button
+            name: Preview zóna 3
+            icon: mdi:eye
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.preview_zone
+              data:
+                zone_entity: valve.travnik_3
+
+  - type: grid
+    cards:
+      - type: heading
+        heading: Počasí
+        icon: mdi:weather-partly-cloudy
+
+      - type: weather-forecast
+        entity: weather.ipemys5
+        forecast_type: daily
+
+      - type: entities
+        title: Meteostanice SWS 12500
+        show_header_toggle: false
+        entities:
+          - entity: sensor.weather_station_sws_12500_venkovni_teplota
+          - entity: sensor.weather_station_sws_12500_venkovni_vlhkost_vzduchu
+          - entity: sensor.weather_station_sws_12500_tlak_vzduchu
+          - entity: sensor.weather_station_sws_12500_rychlost_vetru
+          - entity: sensor.weather_station_sws_12500_poryvy_vetru
+          - entity: sensor.weather_station_sws_12500_uv_index
+          - entity: sensor.weather_station_sws_12500_slunecni_osvit

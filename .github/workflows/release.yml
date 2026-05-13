@@ -99,7 +99,11 @@ jobs:
                   end_idx = idx
                   break
 
-          section = "\n".join(lines[start_idx:end_idx]).strip() + "\n"
+            body_lines = lines[start_idx + 1:end_idx]
+            while body_lines and not body_lines[0].strip():
+              body_lines.pop(0)
+
+            section = "\n".join(body_lines).strip() + "\n"
           Path("RELEASE_NOTES.md").write_text(section, encoding="utf-8")
           PY
 
