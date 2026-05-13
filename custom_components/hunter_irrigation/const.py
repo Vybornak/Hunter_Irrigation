@@ -26,4 +26,10 @@ EVENT_OLD_PREVIEW_RESULT = "irrigation.preview_result"
 EVENT_OLD_START_REQUEST = "irrigation.preview_start_request"
 
 DEFAULT_DURATION_MIN = 15.0
-DEFAULT_RAIN_THRESHOLD = 2.0
+DEFAULT_RAIN_THRESHOLD = 10.0
+DEFAULT_RAIN_2DAY_THRESHOLD = 25.0
+
+SENSOR_RAIN_LAST_24H = f"sensor.{DOMAIN}_rain_last_24_hours_total"
+SENSOR_RAIN_LAST_48H = f"sensor.{DOMAIN}_rain_last_48_hours_total"
+SENSOR_RAIN_GUARD_STATUS = f"sensor.{DOMAIN}_rain_guard_status"
+SENSOR_RAIN_GUARD_REASON = f"sensor.{DOMAIN}_rain_guard_reason"

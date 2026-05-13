@@ -23,7 +23,7 @@
           "daily_rain_sensor": "Denní úhrn srážek (sensor)",
           "instant_rain_sensor": "Okamžité srážky (sensor)",
           "rain_binary_sensor": "Dešťový senzor (binary_sensor)",
-          "threshold_mm": "Práh deště (mm/den)"
+          "threshold_mm": "Práh srážek za 24 h (mm)"
         }
       }
     },
@@ -55,7 +55,7 @@
           "daily_rain_sensor": "Denní úhrn srážek (sensor)",
           "instant_rain_sensor": "Okamžité srážky (sensor)",
           "rain_binary_sensor": "Dešťový senzor (binary_sensor)",
-          "threshold_mm": "Práh deště (mm/den)"
+          "threshold_mm": "Práh srážek za 24 h (mm)"
         }
       }
     }
@@ -86,6 +86,18 @@
       },
       "rain_last_7_days_total": {
         "name": "Srážky za posledních 7 dní"
+      },
+      "rain_last_24_hours_total": {
+        "name": "Srážky za posledních 24 hodin"
+      },
+      "rain_last_48_hours_total": {
+        "name": "Srážky za posledních 48 hodin"
+      },
+      "rain_guard_status": {
+        "name": "Rain guard stav"
+      },
+      "rain_guard_reason": {
+        "name": "Rain guard důvod"
       }
     }
   }

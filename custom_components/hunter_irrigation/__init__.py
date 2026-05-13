@@ -37,7 +37,10 @@ from .const import (
     SERVICE_START_ZONE,
     SERVICE_STOP_ZONE,
     DEFAULT_DURATION_MIN,
+    DEFAULT_RAIN_2DAY_THRESHOLD,
     DEFAULT_RAIN_THRESHOLD,
+    SENSOR_RAIN_LAST_24H,
+    SENSOR_RAIN_LAST_48H,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -223,29 +226,48 @@ class HunterIrrigation:
         return self.hass.states.is_state(self.simulate_entity, "on")
 
     def _is_rain_blocked(self) -> tuple[bool, dict[str, Any]]:
+        rain_last_24h = self._read_float_sensor(SENSOR_RAIN_LAST_24H)
+        rain_last_48h = self._read_float_sensor(SENSOR_RAIN_LAST_48H)
         daily = self._read_float_sensor(self.rain_config.get(CONF_DAILY_RAIN_SENSOR))
         instant = self._read_float_sensor(self.rain_config.get(CONF_INSTANT_RAIN_SENSOR))
         binary = self._read_binary_sensor(self.rain_config.get(CONF_RAIN_BINARY_SENSOR))
         threshold_entity = self.rain_config.get(CONF_RAIN_THRESHOLD_ENTITY)
         threshold_from_entity = self._read_float_sensor(threshold_entity)
-        threshold = (
+        threshold_24h = (
             float(threshold_from_entity)
             if threshold_from_entity is not None
             else self.runtime_rain_threshold
         )
+        threshold_48h = DEFAULT_RAIN_2DAY_THRESHOLD
 
-        blocked = (
-            (daily is not None and daily >= threshold)
-            or (instant is not None and instant > 0)
-            or binary
-        )
+        reason = "none"
+        blocked = False
+        if rain_last_24h is not None and rain_last_24h >= threshold_24h:
+            blocked = True
+            reason = "rain_24h_threshold"
+        elif rain_last_48h is not None and rain_last_48h >= threshold_48h:
+            blocked = True
+            reason = "rain_48h_threshold"
+        elif instant is not None and instant > 0:
+            blocked = True
+            reason = "instant_rain"
+        elif binary:
+            blocked = True
+            reason = "rain_binary"
+        elif daily is not None and daily >= threshold_24h:
+            blocked = True
+            reason = "daily_threshold_fallback"
 
         return blocked, {
+            "rain_last_24h": rain_last_24h,
+            "rain_last_48h": rain_last_48h,
             "daily_rain": daily,
             "instant_rain": instant,
             "rain_binary": binary,
-            "rain_threshold": threshold,
+            "rain_threshold_24h": threshold_24h,
+            "rain_threshold_48h": threshold_48h,
             "rain_threshold_entity": threshold_entity,
+            "rain_block_reason": reason,
         }
 
     @callback

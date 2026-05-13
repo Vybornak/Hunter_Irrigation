@@ -6,6 +6,22 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.14] - 2026-05-13
+
+### Přidáno
+- Nové senzory: `rain_last_24_hours_total` a `rain_last_48_hours_total` pro rolling okna srážek.
+- Nové stavové senzory pro dashboard: `rain_guard_status` a `rain_guard_reason`.
+
+### Změněno
+- Rain guard logika je nyní primárně podle rolling oken:
+	- nezavlažovat, pokud srážky za posledních 24 hodin >= threshold (výchozí 10 mm),
+	- nezavlažovat, pokud srážky za posledních 48 hodin >= 25 mm.
+- Threshold v UI je přejmenován na práh za posledních 24 h.
+- Dashboard je zjednodušen a používá nativní rain guard status/reason místo šablonového textu.
+
+### Opraveno
+- Release workflow už negeneruje duplicitní verzi v titulku a těle release poznámek.
+
 ## [1.0.12] - 2026-05-13
 
 ### Opraveno

@@ -23,7 +23,7 @@
           "daily_rain_sensor": "Daily precipitation (sensor)",
           "instant_rain_sensor": "Instant precipitation (sensor)",
           "rain_binary_sensor": "Rain sensor (binary_sensor)",
-          "threshold_mm": "Rain threshold (mm/day)"
+          "threshold_mm": "Rain threshold for last 24h (mm)"
         }
       }
     },
@@ -55,7 +55,7 @@
           "daily_rain_sensor": "Daily precipitation (sensor)",
           "instant_rain_sensor": "Instant precipitation (sensor)",
           "rain_binary_sensor": "Rain sensor (binary_sensor)",
-          "threshold_mm": "Rain threshold (mm/day)"
+          "threshold_mm": "Rain threshold for last 24h (mm)"
         }
       }
     }
@@ -86,6 +86,18 @@
       },
       "rain_last_7_days_total": {
         "name": "Rain last 7 days"
+      },
+      "rain_last_24_hours_total": {
+        "name": "Rain last 24 hours"
+      },
+      "rain_last_48_hours_total": {
+        "name": "Rain last 48 hours"
+      },
+      "rain_guard_status": {
+        "name": "Rain guard status"
+      },
+      "rain_guard_reason": {
+        "name": "Rain guard reason"
       }
     }
   }

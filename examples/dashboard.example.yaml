@@ -17,26 +17,20 @@ cards:
         heading: Stav & Ovladani
         icon: mdi:sprinkler-variant
 
-      - type: markdown
-        title: Rain Guard Status
-        content: |
-          {% set override = is_state('switch.hunter_irrigation_manual_override', 'on') %}
-          {% set rain_binary = is_state('binary_sensor.vyborny_premyslovice_destovy_senzor', 'on') %}
-          {% set instant = states('sensor.weather_station_sws_12500_srazky')|float(0) %}
-          {% set daily = states('sensor.weather_station_sws_12500_denni_uhrn_srazek')|float(0) %}
-          {% set threshold = states('number.hunter_irrigation_rain_threshold')|float(0) %}
-
-          {% if override %}
-          🟢 **RAIN STOP VYPNUT** - Manual override je aktivni
-          {% elif rain_binary %}
-          🔴 **STOP KVULI DESTI** - Destovy senzor hlasi dest
-          {% elif instant > 0 %}
-          🔴 **STOP KVULI DESTI** - Aktualni srazky: **{{ instant }}**
-          {% elif daily >= threshold %}
-          🟠 **STOP KVULI DESTI** - Dnesni uhrn **{{ daily }}** >= threshold **{{ threshold }}**
-          {% else %}
-          🟢 **ZAHLAHA POVOLENA** - Podminky jsou OK
-          {% endif %}
+      - type: glance
+        title: Rain Guard (chipy)
+        columns: 2
+        show_icon: true
+        show_name: true
+        show_state: true
+        state_color: true
+        entities:
+          - entity: sensor.hunter_irrigation_rain_guard_status
+            name: Status
+            icon: mdi:shield-check
+          - entity: sensor.hunter_irrigation_rain_guard_reason
+            name: Duvod
+            icon: mdi:alert-circle-outline
 
       - type: glance
         title: Zony - Bezi ted
@@ -146,6 +140,10 @@ cards:
         title: Srazkove statistiky
         show_header_toggle: false
         entities:
+          - entity: sensor.hunter_irrigation_rain_last_24_hours_total
+            name: Poslednich 24 h
+          - entity: sensor.hunter_irrigation_rain_last_48_hours_total
+            name: Poslednich 48 h
           - entity: sensor.hunter_irrigation_rain_yesterday
             name: Vcera
           - entity: sensor.hunter_irrigation_rain_day_before_yesterday
