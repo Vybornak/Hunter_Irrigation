@@ -6,6 +6,11 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.10] - 2026-05-13
+
+### Opraveno
+- Doplněna `after_dependencies: ["recorder"]` kvůli validaci Hassfest při použití `homeassistant.components.recorder`.
+
 ## [1.0.9] - 2026-05-13
 
 ### Přidáno
