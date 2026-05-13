@@ -4,13 +4,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from homeassistant import config_entries
 import voluptuous as vol
 
 from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.event import async_call_later
 
 from .const import (
@@ -42,39 +42,6 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-ZONE_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_NAME): cv.string,
-        vol.Required(CONF_ENTITY_ID): cv.entity_id,
-        vol.Optional(CONF_DURATION_MIN, default=DEFAULT_DURATION_MIN): vol.Coerce(float),
-        vol.Optional(CONF_DURATION_ENTITY): cv.entity_id,
-    }
-)
-
-RAIN_SCHEMA = vol.Schema(
-    {
-        vol.Optional(CONF_DAILY_RAIN_SENSOR): cv.entity_id,
-        vol.Optional(CONF_INSTANT_RAIN_SENSOR): cv.entity_id,
-        vol.Optional(CONF_RAIN_BINARY_SENSOR): cv.entity_id,
-        vol.Optional(CONF_RAIN_THRESHOLD, default=DEFAULT_RAIN_THRESHOLD): vol.Coerce(float),
-        vol.Optional(CONF_RAIN_THRESHOLD_ENTITY): cv.entity_id,
-    }
-)
-
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_ZONES): vol.All(cv.ensure_list, [ZONE_SCHEMA]),
-                vol.Optional(CONF_RAIN): RAIN_SCHEMA,
-                vol.Optional(CONF_MANUAL_OVERRIDE_ENTITY): cv.entity_id,
-                vol.Optional(CONF_SIMULATE_ENTITY): cv.entity_id,
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
-
 START_ZONE_SERVICE_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_ZONE): cv.string,
@@ -99,14 +66,13 @@ PREVIEW_ZONE_SERVICE_SCHEMA = vol.Schema(
     }
 )
 
+PLATFORMS = ["number", "switch"]
 
-async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
-    integration_config = config.get(DOMAIN)
-    if not integration_config:
-        return True
 
-    coordinator = HunterIrrigation(hass, integration_config)
-    hass.data[DOMAIN] = {"coordinator": coordinator}
+async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> bool:
+    config = {**entry.data, **entry.options}
+    coordinator = HunterIrrigation(hass, config)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"coordinator": coordinator}
 
     hass.services.async_register(
         DOMAIN,
@@ -127,13 +93,28 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         schema=PREVIEW_ZONE_SERVICE_SCHEMA,
     )
 
-    hass.bus.async_listen(EVENT_OLD_START_REQUEST, coordinator.async_handle_start_event)
+    unsub = hass.bus.async_listen(EVENT_OLD_START_REQUEST, coordinator.async_handle_start_event)
+    entry.async_on_unload(unsub)
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
-    await async_load_platform(hass, "number", DOMAIN, {}, config)
-    await async_load_platform(hass, "switch", DOMAIN, {}, config)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     _LOGGER.info("Hunter Irrigation initialized with %s zones", len(coordinator.zone_by_name))
     return True
+
+
+async def _async_update_listener(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> None:
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> bool:
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+        if not hass.data[DOMAIN]:
+            for service in (SERVICE_START_ZONE, SERVICE_STOP_ZONE, SERVICE_PREVIEW_ZONE):
+                hass.services.async_remove(DOMAIN, service)
+    return unload_ok
 
 
 class HunterIrrigation:

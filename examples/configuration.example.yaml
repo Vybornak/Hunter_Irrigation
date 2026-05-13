@@ -1,6 +1,22 @@
-# Ukazkova konfigurace pro vlastni integraci Hunter Irrigation.
-# Ulozte tento soubor a nacti jej z configuration.yaml pres:
-# hunter_irrigation: !include irrigation/hunter_irrigation_example.yaml
+# ============================================================
+#  Konfigurace Hunter Irrigation – vložte do configuration.yaml
+# ============================================================
+#
+# KROK 1: Doplňte entity_id vašich ventilů/spínačů v sekcí zones.
+#         Každý ventil musí existovat v Home Assistant jako entita
+#         (switch, valve nebo input_boolean) PŘED restartem HA.
+#
+# KROK 2: Uložte configuration.yaml a restartujte Home Assistant.
+#
+# KROK 3: Po restartu integrace automaticky vytvoří:
+#           number.hunter_irrigation_zone_1_duration (a zone_2, zone_3 …)
+#           number.hunter_irrigation_rain_threshold
+#           switch.hunter_irrigation_manual_override
+#           switch.hunter_irrigation_simulation
+#         Tyto entity pak použijte v dashboardu.
+#
+# KROK 4: Importujte dashboard z examples/dashboard.example.yaml.
+# ============================================================
 
 hunter_irrigation:
   zones:
@@ -12,7 +28,10 @@ hunter_irrigation:
       duration_min: 15
     - name: zone_3
       entity_id: valve.travnik_3
-      duration_min: 15
+      duration_min: 10
+
+  # manual_override a simulate NEUVADEJTE zde – integrace je vytvari automaticky
+  # jako switch.hunter_irrigation_manual_override / switch.hunter_irrigation_simulation
 
   rain:
     daily_rain_sensor: sensor.weather_station_sws_12500_denni_uhrn_srazek

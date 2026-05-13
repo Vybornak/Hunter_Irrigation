@@ -1,6 +1,7 @@
 """Number entities for Hunter Irrigation."""
 from __future__ import annotations
 
+from homeassistant import config_entries
 from homeassistant.components.number import NumberEntity
 from homeassistant.const import UnitOfPrecipitationDepth, UnitOfTime
 from homeassistant.core import HomeAssistant
@@ -11,17 +12,12 @@ from . import HunterIrrigation
 from .const import DOMAIN
 
 
-async def async_setup_platform(
+async def async_setup_entry(
     hass: HomeAssistant,
-    config: dict,
+    entry: config_entries.ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-    discovery_info: dict | None = None,
 ) -> None:
-    data = hass.data.get(DOMAIN)
-    if not data:
-        return
-
-    coordinator: HunterIrrigation = data["coordinator"]
+    coordinator: HunterIrrigation = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     entities: list[NumberEntity] = []
 
     for zone_name in coordinator.zone_by_name:

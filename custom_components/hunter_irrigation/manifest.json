@@ -2,6 +2,7 @@
   "domain": "hunter_irrigation",
   "name": "Hunter Irrigation",
   "codeowners": [],
+  "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/Vybornak/Hunter_Irrigation",
   "iot_class": "local_polling",

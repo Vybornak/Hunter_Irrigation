@@ -1,0 +1,63 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Number of zones",
+        "description": "How many irrigation zones do you want to configure?",
+        "data": {
+          "zone_count": "Number of zones"
+        }
+      },
+      "zone": {
+        "title": "Zone {zone_num} of {zone_count}",
+        "data": {
+          "name": "Zone name",
+          "entity_id": "Valve / switch entity",
+          "duration_min": "Default irrigation duration (minutes)"
+        }
+      },
+      "rain": {
+        "title": "Rain sensors (optional)",
+        "description": "Leave fields empty if you do not use rain sensors.",
+        "data": {
+          "daily_rain_sensor": "Daily precipitation (sensor)",
+          "instant_rain_sensor": "Instant precipitation (sensor)",
+          "rain_binary_sensor": "Rain sensor (binary_sensor)",
+          "threshold_mm": "Rain threshold (mm/day)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Hunter Irrigation is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Number of zones",
+        "description": "How many zones do you want to configure?",
+        "data": {
+          "zone_count": "Number of zones"
+        }
+      },
+      "zone": {
+        "title": "Zone {zone_num} of {zone_count}",
+        "data": {
+          "name": "Zone name",
+          "entity_id": "Valve / switch entity",
+          "duration_min": "Default irrigation duration (minutes)"
+        }
+      },
+      "rain": {
+        "title": "Rain sensors (optional)",
+        "description": "Leave fields empty if you do not use rain sensors.",
+        "data": {
+          "daily_rain_sensor": "Daily precipitation (sensor)",
+          "instant_rain_sensor": "Instant precipitation (sensor)",
+          "rain_binary_sensor": "Rain sensor (binary_sensor)",
+          "threshold_mm": "Rain threshold (mm/day)"
+        }
+      }
+    }
+  }
+}

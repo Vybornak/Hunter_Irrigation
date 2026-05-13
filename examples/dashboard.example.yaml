@@ -1,3 +1,20 @@
+# ============================================================
+#  Dashboard Hunter Irrigation
+#
+#  POZOR: Tento dashboard pouzivejte AZ POTE, co:
+#    1) Mate v configuration.yaml pridanou konfiguraci hunter_irrigation
+#    2) Home Assistant byl restartovan (entity se vytvori pri startu)
+#
+#  Entity vytvorene automaticky integraci (NEMEŇTE jejich nazvy):
+#    number.hunter_irrigation_zone_1_duration  (a zone_2, zone_3 …)
+#    number.hunter_irrigation_rain_threshold
+#    switch.hunter_irrigation_manual_override
+#    switch.hunter_irrigation_simulation
+#
+#  Entity oznacene "<-- ZMENTE" jsou specificke pro vas system
+#  a musíte je nahradit skutecnymi entity_id z vaseho HA.
+# ============================================================
+
 title: Zavlaha
 views:
   - title: Zavlaha
