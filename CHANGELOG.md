@@ -6,6 +6,11 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.6] - 2026-05-13
+
+### Opraveno
+- Vrácen `content_in_root: false` pro správnou HACS validaci.
+
 ## [1.0.5] - 2026-05-13
 
 ### Opraveno
