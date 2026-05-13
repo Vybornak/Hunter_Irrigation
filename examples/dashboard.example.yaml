@@ -41,6 +41,40 @@ sections:
           - entity: sensor.weather_station_sws_12500_denni_uhrn_srazek
           - entity: sensor.weather_station_sws_12500_srazky
 
+      - type: entities
+        title: Gardena plán (nativní)
+        show_header_toggle: false
+        entities:
+          - entity: sensor.travnik_1_next_cycle
+            name: Další cyklus zóna 1
+          - entity: sensor.travnik_2_next_cycle
+            name: Další cyklus zóna 2
+          - entity: sensor.travnik_3_next_cycle
+            name: Další cyklus zóna 3
+          - entity: binary_sensor.travnik_1_watering
+            name: Zóna 1 zalévá
+          - entity: binary_sensor.travnik_2_watering
+            name: Zóna 2 zalévá
+          - entity: binary_sensor.travnik_3_watering
+            name: Zóna 3 zalévá
+
+      - type: entities
+        title: Gardena auto/manual
+        show_header_toggle: false
+        entities:
+          - entity: switch.travnik_1_automatic_watering
+            name: Auto zóna 1
+          - entity: switch.travnik_2_automatic_watering
+            name: Auto zóna 2
+          - entity: switch.travnik_3_automatic_watering
+            name: Auto zóna 3
+          - entity: switch.travnik_1_manual_watering
+            name: Manuál zóna 1
+          - entity: switch.travnik_2_manual_watering
+            name: Manuál zóna 2
+          - entity: switch.travnik_3_manual_watering
+            name: Manuál zóna 3
+
       - type: horizontal-stack
         cards:
           - type: button

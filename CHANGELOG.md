@@ -6,6 +6,12 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.12] - 2026-05-13
+
+### Opraveno
+- Release nadpis je zkrácen na formát `[verze] - datum` bez duplicitního názvu integrace.
+- Dashboard example doplněn o nativní Gardena plán (`next_cycle`) a auto/manual přepínače zón.
+
 ## [1.0.11] - 2026-05-13
 
 ### Opraveno

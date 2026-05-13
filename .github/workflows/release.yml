@@ -75,6 +75,7 @@ jobs:
         run: |
           python - << 'PY'
           import re
+          from datetime import datetime
           from pathlib import Path
 
           version = "${{ inputs.version }}"
@@ -103,7 +104,23 @@ jobs:
           while body_lines and not body_lines[0].strip():
               body_lines.pop(0)
 
-          section = "\n".join(body_lines).strip() + "\n"
+            heading = lines[start_idx]
+            date_text = ""
+            m = re.match(r"^##\s+\[[^\]]+\](?:\s+-\s*(.+))?$", heading)
+            if m and m.group(1):
+              raw_date = m.group(1).strip()
+              try:
+                dt = datetime.strptime(raw_date, "%Y-%m-%d")
+                date_text = f"{dt.day}.{dt.month}.{dt.year}"
+              except ValueError:
+                date_text = raw_date
+
+            header_line = f"[{version}]"
+            if date_text:
+              header_line += f" - {date_text}"
+
+            body = "\n".join(body_lines).strip()
+            section = f"{header_line}\n\n{body}\n"
           Path("RELEASE_NOTES.md").write_text(section, encoding="utf-8")
           PY
 
