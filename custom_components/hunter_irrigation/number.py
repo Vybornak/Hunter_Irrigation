@@ -5,6 +5,7 @@ from homeassistant import config_entries
 from homeassistant.components.number import NumberEntity
 from homeassistant.const import UnitOfPrecipitationDepth, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
@@ -21,13 +22,27 @@ async def async_setup_entry(
     entities: list[NumberEntity] = []
 
     for zone_name in coordinator.zone_by_name:
-        entities.append(HunterZoneDurationNumber(coordinator, zone_name))
+        entities.append(HunterZoneDurationNumber(coordinator, entry.entry_id, zone_name))
 
-    entities.append(HunterRainThresholdNumber(coordinator))
+    entities.append(HunterRainThresholdNumber(coordinator, entry.entry_id))
     async_add_entities(entities)
 
 
-class HunterZoneDurationNumber(NumberEntity):
+class HunterBaseNumberEntity(NumberEntity):
+    """Base number entity with shared device metadata."""
+
+    _attr_has_entity_name = True
+
+    def __init__(self, entry_id: str) -> None:
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry_id)},
+            name="Hunter Irrigation",
+            manufacturer="Hunter",
+            model="Irrigation Controller",
+        )
+
+
+class HunterZoneDurationNumber(HunterBaseNumberEntity):
     """Runtime zone duration in minutes."""
 
     _attr_icon = "mdi:timer"
@@ -36,12 +51,13 @@ class HunterZoneDurationNumber(NumberEntity):
     _attr_native_step = 1
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
 
-    def __init__(self, coordinator: HunterIrrigation, zone_name: str) -> None:
+    def __init__(self, coordinator: HunterIrrigation, entry_id: str, zone_name: str) -> None:
+        super().__init__(entry_id)
         self._coordinator = coordinator
         self._zone_name = zone_name
         zone_slug = slugify(zone_name)
         self._attr_unique_id = f"hunter_irrigation_{zone_slug}_duration_min"
-        self._attr_name = f"Hunter Irrigation {zone_name} duration"
+        self._attr_name = f"{zone_name} duration"
         self.entity_id = f"number.hunter_irrigation_{zone_slug}_duration"
 
     @property
@@ -53,7 +69,7 @@ class HunterZoneDurationNumber(NumberEntity):
         self.async_write_ha_state()
 
 
-class HunterRainThresholdNumber(NumberEntity):
+class HunterRainThresholdNumber(HunterBaseNumberEntity):
     """Runtime rain threshold in mm/day."""
 
     _attr_icon = "mdi:weather-rainy"
@@ -62,10 +78,11 @@ class HunterRainThresholdNumber(NumberEntity):
     _attr_native_step = 0.1
     _attr_native_unit_of_measurement = UnitOfPrecipitationDepth.MILLIMETERS
 
-    def __init__(self, coordinator: HunterIrrigation) -> None:
+    def __init__(self, coordinator: HunterIrrigation, entry_id: str) -> None:
+        super().__init__(entry_id)
         self._coordinator = coordinator
         self._attr_unique_id = "hunter_irrigation_rain_threshold_mm"
-        self._attr_name = "Hunter Irrigation rain threshold"
+        self._attr_name = "Rain threshold"
         self.entity_id = "number.hunter_irrigation_rain_threshold"
 
     @property

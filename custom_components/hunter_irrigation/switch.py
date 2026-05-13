@@ -4,6 +4,7 @@ from __future__ import annotations
 from homeassistant import config_entries
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HunterIrrigation
@@ -20,14 +21,16 @@ async def async_setup_entry(
         [
             HunterRuntimeFlagSwitch(
                 coordinator=coordinator,
+                entry_id=entry.entry_id,
                 key="manual_override",
-                name="Hunter Irrigation manual override",
+                name="Manual override",
                 icon="mdi:toggle-switch",
             ),
             HunterRuntimeFlagSwitch(
                 coordinator=coordinator,
+                entry_id=entry.entry_id,
                 key="simulate",
-                name="Hunter Irrigation simulation",
+                name="Simulation",
                 icon="mdi:eye-off",
             ),
         ]
@@ -37,13 +40,28 @@ async def async_setup_entry(
 class HunterRuntimeFlagSwitch(SwitchEntity):
     """Runtime switch used when external helper entity is not configured."""
 
-    def __init__(self, coordinator: HunterIrrigation, key: str, name: str, icon: str) -> None:
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: HunterIrrigation,
+        entry_id: str,
+        key: str,
+        name: str,
+        icon: str,
+    ) -> None:
         self._coordinator = coordinator
         self._key = key
         self._attr_name = name
         self._attr_icon = icon
         self._attr_unique_id = f"hunter_irrigation_{key}"
         self.entity_id = f"switch.hunter_irrigation_{key}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry_id)},
+            name="Hunter Irrigation",
+            manufacturer="Hunter",
+            model="Irrigation Controller",
+        )
 
     @property
     def is_on(self) -> bool:

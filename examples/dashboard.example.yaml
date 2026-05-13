@@ -1,170 +1,102 @@
-# ============================================================
-#  Dashboard Hunter Irrigation
+# Hunter Irrigation dashboard example
 #
-#  POZOR: Tento dashboard pouzivejte AZ POTE, co:
-#    1) Mate v configuration.yaml pridanou konfiguraci hunter_irrigation
-#    2) Home Assistant byl restartovan (entity se vytvori pri startu)
+# Paste this into Dashboard -> Raw configuration editor.
 #
-#  Entity vytvorene automaticky integraci (NEMEŇTE jejich nazvy):
-#    number.hunter_irrigation_zone_1_duration  (a zone_2, zone_3 …)
-#    number.hunter_irrigation_rain_threshold
-#    switch.hunter_irrigation_manual_override
-#    switch.hunter_irrigation_simulation
-#
-#  Entity oznacene "<-- ZMENTE" jsou specificke pro vas system
-#  a musíte je nahradit skutecnymi entity_id z vaseho HA.
-# ============================================================
+# IMPORTANT:
+# 1) Replace placeholder valve entities (valve.irrigation_zone_1, valve.irrigation_zone_2)
+#    with the exact zone entities you configured in integration setup.
+# 2) Replace zone duration entities according to your zone names.
+#    Entity format is: number.hunter_irrigation_<slugified_zone_name>_duration
+#    Example: zone name "Front Lawn" -> number.hunter_irrigation_front_lawn_duration
+# 3) Rain sensors are optional. Remove cards if you do not use these entities.
 
-title: Zavlaha
+title: Hunter Irrigation
 views:
-  - title: Zavlaha
-    path: zavlaha
+  - title: Irrigation
+    path: irrigation
     icon: mdi:sprinkler-variant
     cards:
-      - type: heading
-        heading: Stav systemu
-        icon: mdi:water-check
+      - type: entities
+        title: Runtime controls
+        show_header_toggle: false
+        entities:
+          - entity: switch.hunter_irrigation_manual_override
+            name: Manual override
+          - entity: switch.hunter_irrigation_simulation
+            name: Simulation
+          - entity: number.hunter_irrigation_rain_threshold
+            name: Rain threshold (mm/day)
 
-      - type: grid
-        columns: 3
-        square: false
-        cards:
-          - type: tile
-            entity: switch.hunter_irrigation_manual_override
-            name: Manualni override
-            icon: mdi:account-wrench
-          - type: tile
-            entity: switch.hunter_irrigation_simulation
-            name: Simulace
-            icon: mdi:test-tube
-          - type: tile
-            entity: binary_sensor.vyborny_premyslovice_destovy_senzor
-            name: Destovy senzor
-            icon: mdi:weather-rainy
+      - type: entities
+        title: Rain status (optional)
+        show_header_toggle: false
+        entities:
+          - entity: sensor.daily_rain_mm
+            name: Daily rain
+          - entity: sensor.instant_rain_mm
+            name: Instant rain
+          - entity: binary_sensor.rain_detected
+            name: Rain binary sensor
 
-      - type: heading
-        heading: Srazkove senzory
-        icon: mdi:weather-pouring
-
-      - type: grid
-        columns: 2
-        square: false
-        cards:
-          - type: tile
-            entity: number.hunter_irrigation_rain_threshold
-            name: Prah deste (mm/den)
-          - type: tile
-            entity: sensor.weather_station_sws_12500_denni_uhrn_srazek
-            name: Denni uhrn srazek
-          - type: tile
-            entity: sensor.weather_station_sws_12500_srazky
-            name: Okamzite srazky
-
-      - type: heading
-        heading: Zona 1
-        icon: mdi:numeric-1-circle
+      - type: entities
+        title: Zone durations
+        show_header_toggle: false
+        entities:
+          - entity: number.hunter_irrigation_zone_1_duration
+            name: Zone 1 duration
+          - entity: number.hunter_irrigation_zone_2_duration
+            name: Zone 2 duration
 
       - type: horizontal-stack
         cards:
-          - type: tile
-            entity: number.hunter_irrigation_zone_1_duration
-            name: Delka (min)
           - type: button
-            name: Start zona 1
+            name: Start zone 1
             icon: mdi:play
             tap_action:
               action: call-service
               service: hunter_irrigation.start_zone
               data:
-                zone: zone_1
+                zone_entity: valve.irrigation_zone_1
           - type: button
-            name: Stop zona 1
+            name: Stop zone 1
             icon: mdi:stop
             tap_action:
               action: call-service
               service: hunter_irrigation.stop_zone
               data:
-                zone: zone_1
-
-      - type: heading
-        heading: Zona 2
-        icon: mdi:numeric-2-circle
+                zone_entity: valve.irrigation_zone_1
+          - type: button
+            name: Preview zone 1
+            icon: mdi:eye
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.preview_zone
+              data:
+                zone_entity: valve.irrigation_zone_1
 
       - type: horizontal-stack
         cards:
-          - type: tile
-            entity: number.hunter_irrigation_zone_2_duration
-            name: Delka (min)
           - type: button
-            name: Start zona 2
+            name: Start zone 2
             icon: mdi:play
             tap_action:
               action: call-service
               service: hunter_irrigation.start_zone
               data:
-                zone: zone_2
+                zone_entity: valve.irrigation_zone_2
           - type: button
-            name: Stop zona 2
+            name: Stop zone 2
             icon: mdi:stop
             tap_action:
               action: call-service
               service: hunter_irrigation.stop_zone
               data:
-                zone: zone_2
-
-      - type: heading
-        heading: Zona 3
-        icon: mdi:numeric-3-circle
-
-      - type: horizontal-stack
-        cards:
-          - type: tile
-            entity: number.hunter_irrigation_zone_3_duration
-            name: Delka (min)
+                zone_entity: valve.irrigation_zone_2
           - type: button
-            name: Start zona 3
-            icon: mdi:play
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.start_zone
-              data:
-                zone: zone_3
-          - type: button
-            name: Stop zona 3
-            icon: mdi:stop
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.stop_zone
-              data:
-                zone: zone_3
-
-      - type: heading
-        heading: Rychly test (preview)
-        icon: mdi:eye-check
-
-      - type: horizontal-stack
-        cards:
-          - type: button
-            name: Preview zona 1
+            name: Preview zone 2
             icon: mdi:eye
             tap_action:
               action: call-service
               service: hunter_irrigation.preview_zone
               data:
-                zone: zone_1
-          - type: button
-            name: Preview zona 2
-            icon: mdi:eye
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.preview_zone
-              data:
-                zone: zone_2
-          - type: button
-            name: Preview zona 3
-            icon: mdi:eye
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.preview_zone
-              data:
-                zone: zone_3
+                zone_entity: valve.irrigation_zone_2

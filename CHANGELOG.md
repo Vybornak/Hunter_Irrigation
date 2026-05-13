@@ -6,6 +6,12 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.8] - 2026-05-13
+
+### Opraveno
+- Entity integrace jsou navazane na jedno zarizeni, takze detail v Home Assistantu je sjednoceny jako u beznych integraci.
+- Dashboard example byl upraven pro aktualni entity a service volani (`zone_entity`) tak, aby se po vlozeni korektne zobrazil.
+
 ## [1.0.7] - 2026-05-13
 
 ### Opraveno
