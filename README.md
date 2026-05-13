@@ -1,48 +1,70 @@
 # Hunter Irrigation
 
-Custom Home Assistant integration for controlling Hunter irrigation zones from Home Assistant.
+Vlastní integrace pro Home Assistant pro řízení závlahy Hunter.
 
-## Features
+## Co integrace umí
 
-- Control irrigation zones using `valve` or `switch` entities
-- Rain blocking logic (daily sensor, instant sensor, binary rain sensor)
-- Manual override and simulation mode support
-- Services:
+- Spouštět závlahové zóny přes entity typu `valve` nebo `switch`
+- Automaticky vytvářet ovládací entity (`number` a `switch`) bez ručního zakládání helperů
+- Blokovat zálivku podle srážek:
+  - denní úhrn (`daily_rain_sensor`)
+  - okamžité srážky (`instant_rain_sensor`)
+  - dešťový binární senzor (`rain_binary_sensor`)
+- Respektovat ruční přepsání (`manual_override`) a simulační režim (`simulate`)
+- Poskytovat služby:
   - `hunter_irrigation.start_zone`
   - `hunter_irrigation.stop_zone`
   - `hunter_irrigation.preview_zone`
-- Backward compatibility with `irrigation.preview_start_request`
+- Udržet zpětnou kompatibilitu s událostí `irrigation.preview_start_request`
 
-## Repository layout
+## Struktura repozitare
 
-- `custom_components/hunter_irrigation/` integration code
-- `examples/configuration.example.yaml` example YAML config
-- `hacs.json` metadata for HACS custom repository
+- `custom_components/hunter_irrigation/` kód integrace
+- `examples/configuration.example.yaml` ukázka konfigurace
+- `examples/helpers.example.yaml` ukázka helperů (`input_number`, `input_boolean`)
+- `examples/dashboard.example.yaml` ukázka Lovelace dashboardu
+- `CHANGELOG.md` historie změn pro release notes
+- `hacs.json` metadata pro HACS
 
-## Installation via HACS (Custom repository)
+## Instalace přes HACS (vlastní repozitář)
 
-1. Push this repository to GitHub.
-2. In HACS go to `Integrations` -> menu -> `Custom repositories`.
-3. Add your repo URL and choose category `Integration`.
-4. Install `Hunter Irrigation` and restart Home Assistant.
-5. Add YAML config (see `examples/configuration.example.yaml`).
+1. Nahrajte tento repozitář na GitHub.
+2. V HACS otevřete `Integrations` -> menu -> `Custom repositories`.
+3. Přidejte URL repozitáře a zvolte kategorii `Integration`.
+4. Nainstalujte `Hunter Irrigation` a restartujte Home Assistant.
+5. Přidejte YAML konfiguraci (viz `examples/configuration.example.yaml`).
 
-## YAML configuration
+## Automaticky vytvořené entity
+
+Po načtení integrace se vytvoří entity, které můžeš hned použít v dashboardu:
+
+- `number.hunter_irrigation_zone_1_duration`
+- `number.hunter_irrigation_zone_2_duration`
+- `number.hunter_irrigation_zone_3_duration`
+- `number.hunter_irrigation_rain_threshold`
+- `switch.hunter_irrigation_manual_override`
+- `switch.hunter_irrigation_simulation`
+
+Ruční helpery tedy nejsou povinné.
+
+## Volitelné externí helpery
+
+Pokud chceš zachovat původní helper entity (`input_number.*`, `input_boolean.*`), můžeš je stále použít.
+Ukázka je v `examples/helpers.example.yaml`.
+
+## YAML konfigurace
 
 ```yaml
 hunter_irrigation:
   zones:
     - name: zone_1
       entity_id: valve.travnik_1
-      duration_entity: input_number.irrigation_zone_1_duration_min
       duration_min: 15
     - name: zone_2
       entity_id: valve.travnik_2
-      duration_entity: input_number.irrigation_zone_2_duration_min
       duration_min: 15
     - name: zone_3
       entity_id: valve.travnik_3
-      duration_entity: input_number.irrigation_zone_3_duration_min
       duration_min: 15
 
   rain:
@@ -50,7 +72,39 @@ hunter_irrigation:
     instant_rain_sensor: sensor.weather_station_sws_12500_srazky
     rain_binary_sensor: binary_sensor.vyborny_premyslovice_destovy_senzor
     threshold_mm: 2.0
-
-  manual_override: input_boolean.irrigation_manual_override
-  simulate: input_boolean.irrigation_simulate
 ```
+
+## Dashboard v Home Assistantu
+
+Ano, může to být rovnou součástí repozitáře. Integrace sama o sobě zatím dashboard automaticky nevytvoří, ale v repozitáři je připravená šablona:
+
+- `examples/dashboard.example.yaml`
+
+Postup je jednoduchý:
+
+1. V Home Assistantu vytvořte novou dashboard záložku.
+2. Zvolte `Raw configuration editor`.
+3. Vložte obsah z `examples/dashboard.example.yaml`.
+4. Upravte hlavně zóny a srážkové senzory podle vašich skutečných `entity_id`.
+
+Šablona obsahuje:
+
+- přehled stavu (manual override, simulace, déšť)
+- ovládání prahu deště
+- ovládání zón (spuštění/zastavení)
+- nastavování délky zálivky
+- diagnostiku srážkových senzorů
+
+## Release proces (HACS update + changelog)
+
+Když budeš chtít vydat novou verzi, provedeme vždy stejný postup:
+
+1. Doplnit novou sekci verze do `CHANGELOG.md`.
+2. Zvýšit verzi v `custom_components/hunter_irrigation/manifest.json` (stejná verze jako release tag).
+3. Commit + push do `main`.
+4. Vytvořit a pushnout git tag (např. `1.0.1`).
+5. Vytvořit GitHub Release nad tímto tagem.
+6. Do GitHub Release vložit text z odpovídající sekce v `CHANGELOG.md`.
+7. V HACS spustit `Check for updates` (nebo počkat na refresh cache).
+
+Poznámka: Právě release notes z GitHub Release se zobrazují v HACS/HA u dané verze.

@@ -10,6 +10,7 @@ from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.helpers.event import async_call_later
 
 from .const import (
@@ -21,6 +22,7 @@ from .const import (
     CONF_RAIN,
     CONF_RAIN_BINARY_SENSOR,
     CONF_RAIN_THRESHOLD,
+    CONF_RAIN_THRESHOLD_ENTITY,
     CONF_SIMULATE_ENTITY,
     CONF_SKIP_RAIN_CHECK,
     CONF_ZONE,
@@ -55,6 +57,7 @@ RAIN_SCHEMA = vol.Schema(
         vol.Optional(CONF_INSTANT_RAIN_SENSOR): cv.entity_id,
         vol.Optional(CONF_RAIN_BINARY_SENSOR): cv.entity_id,
         vol.Optional(CONF_RAIN_THRESHOLD, default=DEFAULT_RAIN_THRESHOLD): vol.Coerce(float),
+        vol.Optional(CONF_RAIN_THRESHOLD_ENTITY): cv.entity_id,
     }
 )
 
@@ -103,7 +106,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         return True
 
     coordinator = HunterIrrigation(hass, integration_config)
-    hass.data[DOMAIN] = coordinator
+    hass.data[DOMAIN] = {"coordinator": coordinator}
 
     hass.services.async_register(
         DOMAIN,
@@ -126,6 +129,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
     hass.bus.async_listen(EVENT_OLD_START_REQUEST, coordinator.async_handle_start_event)
 
+    await async_load_platform(hass, "number", DOMAIN, {}, config)
+    await async_load_platform(hass, "switch", DOMAIN, {}, config)
+
     _LOGGER.info("Hunter Irrigation initialized with %s zones", len(coordinator.zone_by_name))
     return True
 
@@ -135,15 +141,34 @@ class HunterIrrigation:
         self.hass = hass
         self.zone_by_name: dict[str, dict[str, Any]] = {}
         self.zone_by_entity: dict[str, dict[str, Any]] = {}
+        self.zone_runtime_duration: dict[str, float] = {}
         for zone in config[CONF_ZONES]:
             name = zone[CONF_NAME]
             self.zone_by_name[name] = zone
             self.zone_by_entity[zone[CONF_ENTITY_ID]] = zone
+            self.zone_runtime_duration[name] = float(zone.get(CONF_DURATION_MIN, DEFAULT_DURATION_MIN))
 
         self.rain_config = config.get(CONF_RAIN, {})
         self.manual_override_entity = config.get(CONF_MANUAL_OVERRIDE_ENTITY)
         self.simulate_entity = config.get(CONF_SIMULATE_ENTITY)
+        self.runtime_manual_override = False
+        self.runtime_simulate = False
+        self.runtime_rain_threshold = float(
+            self.rain_config.get(CONF_RAIN_THRESHOLD, DEFAULT_RAIN_THRESHOLD)
+        )
         self.active_timers: dict[str, callback] = {}
+
+    def set_zone_runtime_duration(self, zone_name: str, duration_min: float) -> None:
+        self.zone_runtime_duration[zone_name] = float(duration_min)
+
+    def set_runtime_manual_override(self, enabled: bool) -> None:
+        self.runtime_manual_override = enabled
+
+    def set_runtime_simulate(self, enabled: bool) -> None:
+        self.runtime_simulate = enabled
+
+    def set_runtime_rain_threshold(self, threshold_mm: float) -> None:
+        self.runtime_rain_threshold = float(threshold_mm)
 
     def _get_zone_config(
         self, zone_name: str | None, entity_id: str | None
@@ -178,6 +203,10 @@ class HunterIrrigation:
                         f"Invalid duration value from {duration_entity}: {state.state}"
                     )
 
+        zone_name = zone_config.get(CONF_NAME)
+        if zone_name and zone_name in self.zone_runtime_duration:
+            return float(self.zone_runtime_duration[zone_name])
+
         duration_min = zone_config.get(CONF_DURATION_MIN)
         if duration_min is not None:
             return float(duration_min)
@@ -204,19 +233,25 @@ class HunterIrrigation:
 
     def _is_manual_override(self) -> bool:
         if not self.manual_override_entity:
-            return False
+            return self.runtime_manual_override
         return self.hass.states.is_state(self.manual_override_entity, "on")
 
     def _is_simulation(self) -> bool:
         if not self.simulate_entity:
-            return False
+            return self.runtime_simulate
         return self.hass.states.is_state(self.simulate_entity, "on")
 
     def _is_rain_blocked(self) -> tuple[bool, dict[str, Any]]:
         daily = self._read_float_sensor(self.rain_config.get(CONF_DAILY_RAIN_SENSOR))
         instant = self._read_float_sensor(self.rain_config.get(CONF_INSTANT_RAIN_SENSOR))
         binary = self._read_binary_sensor(self.rain_config.get(CONF_RAIN_BINARY_SENSOR))
-        threshold = float(self.rain_config.get(CONF_RAIN_THRESHOLD, DEFAULT_RAIN_THRESHOLD))
+        threshold_entity = self.rain_config.get(CONF_RAIN_THRESHOLD_ENTITY)
+        threshold_from_entity = self._read_float_sensor(threshold_entity)
+        threshold = (
+            float(threshold_from_entity)
+            if threshold_from_entity is not None
+            else self.runtime_rain_threshold
+        )
 
         blocked = (
             (daily is not None and daily >= threshold)
@@ -229,6 +264,7 @@ class HunterIrrigation:
             "instant_rain": instant,
             "rain_binary": binary,
             "rain_threshold": threshold,
+            "rain_threshold_entity": threshold_entity,
         }
 
     @callback

@@ -1,0 +1,153 @@
+title: Zavlaha
+views:
+  - title: Zavlaha
+    path: zavlaha
+    icon: mdi:sprinkler-variant
+    cards:
+      - type: heading
+        heading: Stav systemu
+        icon: mdi:water-check
+
+      - type: grid
+        columns: 3
+        square: false
+        cards:
+          - type: tile
+            entity: switch.hunter_irrigation_manual_override
+            name: Manualni override
+            icon: mdi:account-wrench
+          - type: tile
+            entity: switch.hunter_irrigation_simulation
+            name: Simulace
+            icon: mdi:test-tube
+          - type: tile
+            entity: binary_sensor.vyborny_premyslovice_destovy_senzor
+            name: Destovy senzor
+            icon: mdi:weather-rainy
+
+      - type: heading
+        heading: Srazkove senzory
+        icon: mdi:weather-pouring
+
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: tile
+            entity: number.hunter_irrigation_rain_threshold
+            name: Prah deste (mm/den)
+          - type: tile
+            entity: sensor.weather_station_sws_12500_denni_uhrn_srazek
+            name: Denni uhrn srazek
+          - type: tile
+            entity: sensor.weather_station_sws_12500_srazky
+            name: Okamzite srazky
+
+      - type: heading
+        heading: Zona 1
+        icon: mdi:numeric-1-circle
+
+      - type: horizontal-stack
+        cards:
+          - type: tile
+            entity: number.hunter_irrigation_zone_1_duration
+            name: Delka (min)
+          - type: button
+            name: Start zona 1
+            icon: mdi:play
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.start_zone
+              data:
+                zone: zone_1
+          - type: button
+            name: Stop zona 1
+            icon: mdi:stop
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.stop_zone
+              data:
+                zone: zone_1
+
+      - type: heading
+        heading: Zona 2
+        icon: mdi:numeric-2-circle
+
+      - type: horizontal-stack
+        cards:
+          - type: tile
+            entity: number.hunter_irrigation_zone_2_duration
+            name: Delka (min)
+          - type: button
+            name: Start zona 2
+            icon: mdi:play
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.start_zone
+              data:
+                zone: zone_2
+          - type: button
+            name: Stop zona 2
+            icon: mdi:stop
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.stop_zone
+              data:
+                zone: zone_2
+
+      - type: heading
+        heading: Zona 3
+        icon: mdi:numeric-3-circle
+
+      - type: horizontal-stack
+        cards:
+          - type: tile
+            entity: number.hunter_irrigation_zone_3_duration
+            name: Delka (min)
+          - type: button
+            name: Start zona 3
+            icon: mdi:play
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.start_zone
+              data:
+                zone: zone_3
+          - type: button
+            name: Stop zona 3
+            icon: mdi:stop
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.stop_zone
+              data:
+                zone: zone_3
+
+      - type: heading
+        heading: Rychly test (preview)
+        icon: mdi:eye-check
+
+      - type: horizontal-stack
+        cards:
+          - type: button
+            name: Preview zona 1
+            icon: mdi:eye
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.preview_zone
+              data:
+                zone: zone_1
+          - type: button
+            name: Preview zona 2
+            icon: mdi:eye
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.preview_zone
+              data:
+                zone: zone_2
+          - type: button
+            name: Preview zona 3
+            icon: mdi:eye
+            tap_action:
+              action: call-service
+              service: hunter_irrigation.preview_zone
+              data:
+                zone: zone_3

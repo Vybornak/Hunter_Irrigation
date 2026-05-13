@@ -1,0 +1,48 @@
+# Helper entity pro Home Assistant pouzivane v ukazkovem setupu Hunter Irrigation.
+# Tento obsah nacitejte z configuration.yaml, napr:
+# input_number: !include irrigation/helpers_input_number.yaml
+# input_boolean: !include irrigation/helpers_input_boolean.yaml
+
+input_number:
+  irrigation_rain_threshold_mm:
+    name: "Prah deste (mm/den)"
+    initial: 2
+    min: 0
+    max: 50
+    step: 0.1
+    unit_of_measurement: mm
+
+  irrigation_zone_1_duration_min:
+    name: "Zona 1 delka (min)"
+    initial: 15
+    min: 1
+    max: 240
+    step: 1
+    unit_of_measurement: min
+
+  irrigation_zone_2_duration_min:
+    name: "Zona 2 delka (min)"
+    initial: 15
+    min: 1
+    max: 240
+    step: 1
+    unit_of_measurement: min
+
+  irrigation_zone_3_duration_min:
+    name: "Zona 3 delka (min)"
+    initial: 15
+    min: 1
+    max: 240
+    step: 1
+    unit_of_measurement: min
+
+input_boolean:
+  irrigation_manual_override:
+    name: "Zavlaha: Manualni override"
+    icon: mdi:toggle-switch
+    initial: false
+
+  irrigation_simulate:
+    name: "Zavlaha: Simulacni rezim"
+    icon: mdi:eye-off
+    initial: true

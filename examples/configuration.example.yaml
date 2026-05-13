@@ -1,20 +1,17 @@
-# Example configuration for the custom Hunter Irrigation integration.
-# Save this file and include it from configuration.yaml with:
+# Ukazkova konfigurace pro vlastni integraci Hunter Irrigation.
+# Ulozte tento soubor a nacti jej z configuration.yaml pres:
 # hunter_irrigation: !include irrigation/hunter_irrigation_example.yaml
 
 hunter_irrigation:
   zones:
     - name: zone_1
       entity_id: valve.travnik_1
-      duration_entity: input_number.irrigation_zone_1_duration_min
       duration_min: 15
     - name: zone_2
       entity_id: valve.travnik_2
-      duration_entity: input_number.irrigation_zone_2_duration_min
       duration_min: 15
     - name: zone_3
       entity_id: valve.travnik_3
-      duration_entity: input_number.irrigation_zone_3_duration_min
       duration_min: 15
 
   rain:
@@ -22,6 +19,3 @@ hunter_irrigation:
     instant_rain_sensor: sensor.weather_station_sws_12500_srazky
     rain_binary_sensor: binary_sensor.vyborny_premyslovice_destovy_senzor
     threshold_mm: 2.0
-
-  manual_override: input_boolean.irrigation_manual_override
-  simulate: input_boolean.irrigation_simulate

@@ -1,7 +1,7 @@
 {
   "domain": "hunter_irrigation",
   "name": "Hunter Irrigation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "documentation": "https://github.com/Vybornak/Hunter_Irrigation",
   "requirements": [],
   "dependencies": [],
