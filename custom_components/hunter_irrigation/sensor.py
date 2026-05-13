@@ -72,7 +72,7 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
 
     def _sum_cumulative_states(self, states: list[Any]) -> float | None:
         if not states:
-            return None
+            return 0.0
         if len(states) == 1:
             try:
                 float(states[0].state)
@@ -168,8 +168,8 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
                 last_7_days_total += float(daily_max.get(d, 0.0))
 
             return {
-                "rain_yesterday": daily_max.get(yesterday_date),
-                "rain_day_before_yesterday": daily_max.get(day_before_date),
+                "rain_yesterday": float(daily_max.get(yesterday_date, 0.0)),
+                "rain_day_before_yesterday": float(daily_max.get(day_before_date, 0.0)),
                 "rain_last_7_days_total": round(last_7_days_total, 2),
                 "rain_last_24_hours_total": self._sum_cumulative_states(states_24h),
                 "rain_last_48_hours_total": self._sum_cumulative_states(states_48h),

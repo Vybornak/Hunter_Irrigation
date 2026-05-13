@@ -6,6 +6,21 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.15] - 2026-05-13
+
+### Přidáno
+- Samostatný konfigurovatelný práh srážek za 48 hodin (`number.hunter_irrigation_rain_threshold_48h`).
+
+### Změněno
+- Rain guard nyní používá oba runtime prahy:
+	- 24 h threshold (nastavitelný),
+	- 48 h threshold (nastavitelný).
+- Popisky v config flow, options flow a dashboardu jsou rozdělené na 24 h a 48 h.
+
+### Opraveno
+- Senzory srážek vrací `0.0` místo `unknown`, pokud v daném okně nejsou změny.
+- Dashboard obsahuje obě threshold entity (24 h / 48 h).
+
 ## [1.0.14] - 2026-05-13
 
 ### Přidáno

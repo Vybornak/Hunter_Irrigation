@@ -193,4 +193,6 @@ cards:
           - entity: switch.hunter_irrigation_simulate
             name: Simulace (bez fyzickeho otevreni)
           - entity: number.hunter_irrigation_rain_threshold
-            name: Rain threshold (mm)
+            name: Rain threshold 24 h (mm)
+          - entity: number.hunter_irrigation_rain_threshold_48h
+            name: Rain threshold 48 h (mm)

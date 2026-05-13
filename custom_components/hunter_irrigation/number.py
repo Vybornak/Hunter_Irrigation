@@ -24,7 +24,8 @@ async def async_setup_entry(
     for zone_name in coordinator.zone_by_name:
         entities.append(HunterZoneDurationNumber(coordinator, entry.entry_id, zone_name))
 
-    entities.append(HunterRainThresholdNumber(coordinator, entry.entry_id))
+    entities.append(HunterRainThreshold24hNumber(coordinator, entry.entry_id))
+    entities.append(HunterRainThreshold48hNumber(coordinator, entry.entry_id))
     async_add_entities(entities)
 
 
@@ -59,7 +60,7 @@ class HunterZoneDurationNumber(HunterBaseNumberEntity):
         self._attr_unique_id = f"hunter_irrigation_{zone_slug}_duration_min"
         self._attr_translation_key = "zone_duration"
         self._attr_translation_placeholders = {"zone_name": zone_name}
-        self.entity_id = f"number.hunter_irrigation_{zone_slug}_duration"
+        self._attr_entity_id = f"number.hunter_irrigation_{zone_slug}_duration"
 
     @property
     def native_value(self) -> float:
@@ -70,8 +71,8 @@ class HunterZoneDurationNumber(HunterBaseNumberEntity):
         self.async_write_ha_state()
 
 
-class HunterRainThresholdNumber(HunterBaseNumberEntity):
-    """Runtime rain threshold in mm/day."""
+class HunterRainThreshold24hNumber(HunterBaseNumberEntity):
+    """Runtime rain threshold for rolling 24h window."""
 
     _attr_icon = "mdi:weather-rainy"
     _attr_native_min_value = 0
@@ -82,9 +83,9 @@ class HunterRainThresholdNumber(HunterBaseNumberEntity):
     def __init__(self, coordinator: HunterIrrigation, entry_id: str) -> None:
         super().__init__(entry_id)
         self._coordinator = coordinator
-        self._attr_unique_id = "hunter_irrigation_rain_threshold_mm"
-        self._attr_translation_key = "rain_threshold"
-        self.entity_id = "number.hunter_irrigation_rain_threshold"
+        self._attr_unique_id = "hunter_irrigation_rain_threshold_24h_mm"
+        self._attr_translation_key = "rain_threshold_24h"
+        self._attr_entity_id = "number.hunter_irrigation_rain_threshold"
 
     @property
     def native_value(self) -> float:
@@ -92,4 +93,29 @@ class HunterRainThresholdNumber(HunterBaseNumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         self._coordinator.set_runtime_rain_threshold(float(value))
+        self.async_write_ha_state()
+
+
+class HunterRainThreshold48hNumber(HunterBaseNumberEntity):
+    """Runtime rain threshold for rolling 48h window."""
+
+    _attr_icon = "mdi:weather-pouring"
+    _attr_native_min_value = 0
+    _attr_native_max_value = 100
+    _attr_native_step = 0.1
+    _attr_native_unit_of_measurement = UnitOfPrecipitationDepth.MILLIMETERS
+
+    def __init__(self, coordinator: HunterIrrigation, entry_id: str) -> None:
+        super().__init__(entry_id)
+        self._coordinator = coordinator
+        self._attr_unique_id = "hunter_irrigation_rain_threshold_48h_mm"
+        self._attr_translation_key = "rain_threshold_48h"
+        self._attr_entity_id = "number.hunter_irrigation_rain_threshold_48h"
+
+    @property
+    def native_value(self) -> float:
+        return self._coordinator.runtime_rain_threshold_48h
+
+    async def async_set_native_value(self, value: float) -> None:
+        self._coordinator.set_runtime_rain_threshold_48h(float(value))
         self.async_write_ha_state()

@@ -16,8 +16,10 @@ from .const import (
     CONF_RAIN,
     CONF_RAIN_BINARY_SENSOR,
     CONF_RAIN_THRESHOLD,
+    CONF_RAIN_THRESHOLD_48H,
     CONF_ZONES,
     DEFAULT_DURATION_MIN,
+    DEFAULT_RAIN_2DAY_THRESHOLD,
     DEFAULT_RAIN_THRESHOLD,
     DOMAIN,
 )
@@ -73,6 +75,16 @@ def _rain_schema(rain: dict[str, Any] | None = None) -> vol.Schema:
     ] = selector.NumberSelector(
         selector.NumberSelectorConfig(
             min=0, max=50, step=0.1, mode=selector.NumberSelectorMode.BOX
+        )
+    )
+    schema[
+        vol.Required(
+            CONF_RAIN_THRESHOLD_48H,
+            default=float(rain.get(CONF_RAIN_THRESHOLD_48H, DEFAULT_RAIN_2DAY_THRESHOLD)),
+        )
+    ] = selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=0, max=100, step=0.1, mode=selector.NumberSelectorMode.BOX
         )
     )
     return vol.Schema(schema)
@@ -134,7 +146,8 @@ class HunterIrrigationConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_rain(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
             rain: dict[str, Any] = {
-                CONF_RAIN_THRESHOLD: float(user_input[CONF_RAIN_THRESHOLD])
+                CONF_RAIN_THRESHOLD: float(user_input[CONF_RAIN_THRESHOLD]),
+                CONF_RAIN_THRESHOLD_48H: float(user_input[CONF_RAIN_THRESHOLD_48H]),
             }
             for key in (CONF_DAILY_RAIN_SENSOR, CONF_INSTANT_RAIN_SENSOR, CONF_RAIN_BINARY_SENSOR):
                 val = user_input.get(key)
@@ -212,7 +225,8 @@ class HunterIrrigationOptionsFlow(config_entries.OptionsFlow):
     async def async_step_rain(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
             rain: dict[str, Any] = {
-                CONF_RAIN_THRESHOLD: float(user_input[CONF_RAIN_THRESHOLD])
+                CONF_RAIN_THRESHOLD: float(user_input[CONF_RAIN_THRESHOLD]),
+                CONF_RAIN_THRESHOLD_48H: float(user_input[CONF_RAIN_THRESHOLD_48H]),
             }
             for key in (CONF_DAILY_RAIN_SENSOR, CONF_INSTANT_RAIN_SENSOR, CONF_RAIN_BINARY_SENSOR):
                 val = user_input.get(key)

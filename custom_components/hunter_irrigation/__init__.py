@@ -22,6 +22,7 @@ from .const import (
     CONF_RAIN,
     CONF_RAIN_BINARY_SENSOR,
     CONF_RAIN_THRESHOLD,
+    CONF_RAIN_THRESHOLD_48H,
     CONF_RAIN_THRESHOLD_ENTITY,
     CONF_SIMULATE_ENTITY,
     CONF_SKIP_RAIN_CHECK,
@@ -140,6 +141,9 @@ class HunterIrrigation:
         self.runtime_rain_threshold = float(
             self.rain_config.get(CONF_RAIN_THRESHOLD, DEFAULT_RAIN_THRESHOLD)
         )
+        self.runtime_rain_threshold_48h = float(
+            self.rain_config.get(CONF_RAIN_THRESHOLD_48H, DEFAULT_RAIN_2DAY_THRESHOLD)
+        )
         self.active_timers: dict[str, callback] = {}
 
     def set_zone_runtime_duration(self, zone_name: str, duration_min: float) -> None:
@@ -153,6 +157,9 @@ class HunterIrrigation:
 
     def set_runtime_rain_threshold(self, threshold_mm: float) -> None:
         self.runtime_rain_threshold = float(threshold_mm)
+
+    def set_runtime_rain_threshold_48h(self, threshold_mm: float) -> None:
+        self.runtime_rain_threshold_48h = float(threshold_mm)
 
     def _get_zone_config(
         self, zone_name: str | None, entity_id: str | None
@@ -238,7 +245,7 @@ class HunterIrrigation:
             if threshold_from_entity is not None
             else self.runtime_rain_threshold
         )
-        threshold_48h = DEFAULT_RAIN_2DAY_THRESHOLD
+        threshold_48h = self.runtime_rain_threshold_48h
 
         reason = "none"
         blocked = False
