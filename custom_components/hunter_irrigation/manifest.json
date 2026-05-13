@@ -3,6 +3,7 @@
   "name": "Hunter Irrigation",
   "version": "1.0.1",
   "documentation": "https://github.com/Vybornak/Hunter_Irrigation",
+  "issue_tracker": "https://github.com/Vybornak/Hunter_Irrigation/issues",
   "requirements": [],
   "dependencies": [],
   "codeowners": [],
