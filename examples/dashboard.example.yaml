@@ -1,170 +1,226 @@
-# Hunter Irrigation dashboard tailored to your current entity list.
+# Hunter Irrigation - Compact Dashboard
 # Paste into one VIEW raw editor (not whole dashboard YAML).
+# Compact, icon-based design with minimal scrolling - inspired by modern HA dashboards
 
-type: sections
-max_columns: 2
+type: custom:grid-layout
+layout:
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr))
+  gap: 12px
+  margin: 0
 title: Hunter Irrigation
 path: hunter-irrigation
 icon: mdi:sprinkler-variant
-cards: []
-sections:
-  - type: grid
+cards:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ZONE STATUS & QUICK CONTROLS (Compact card layout)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - type: vertical-stack
     cards:
       - type: heading
-        heading: Hunter Ovládání
+        heading: Zóny & Ovládání
         icon: mdi:sprinkler-variant
 
+      # Zone 1 Status + Controls
+      - type: horizontal-stack
+        cards:
+          - type: glance
+            columns: 3
+            show_icon: true
+            show_name: true
+            show_state: true
+            entities:
+              - entity: binary_sensor.travnik_1_watering
+                icon: mdi:water-outline
+                name: "Z1"
+              - entity: switch.travnik_1_automatic_watering
+                icon: mdi:robot
+                name: Auto
+              - entity: switch.travnik_1_manual_watering
+                icon: mdi:hand-right
+                name: Manu
+          - type: horizontal-stack
+            cards:
+              - type: button
+                icon: mdi:play-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.start_zone
+                  data:
+                    zone_entity: valve.travnik_1
+              - type: button
+                icon: mdi:stop-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.stop_zone
+                  data:
+                    zone_entity: valve.travnik_1
+
+      # Zone 2 Status + Controls
+      - type: horizontal-stack
+        cards:
+          - type: glance
+            columns: 3
+            show_icon: true
+            show_name: true
+            show_state: true
+            entities:
+              - entity: binary_sensor.travnik_2_watering
+                icon: mdi:water-outline
+                name: "Z2"
+              - entity: switch.travnik_2_automatic_watering
+                icon: mdi:robot
+                name: Auto
+              - entity: switch.travnik_2_manual_watering
+                icon: mdi:hand-right
+                name: Manu
+          - type: horizontal-stack
+            cards:
+              - type: button
+                icon: mdi:play-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.start_zone
+                  data:
+                    zone_entity: valve.travnik_2
+              - type: button
+                icon: mdi:stop-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.stop_zone
+                  data:
+                    zone_entity: valve.travnik_2
+
+      # Zone 3 Status + Controls
+      - type: horizontal-stack
+        cards:
+          - type: glance
+            columns: 3
+            show_icon: true
+            show_name: true
+            show_state: true
+            entities:
+              - entity: binary_sensor.travnik_3_watering
+                icon: mdi:water-outline
+                name: "Z3"
+              - entity: switch.travnik_3_automatic_watering
+                icon: mdi:robot
+                name: Auto
+              - entity: switch.travnik_3_manual_watering
+                icon: mdi:hand-right
+                name: Manu
+          - type: horizontal-stack
+            cards:
+              - type: button
+                icon: mdi:play-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.start_zone
+                  data:
+                    zone_entity: valve.travnik_3
+              - type: button
+                icon: mdi:stop-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.stop_zone
+                  data:
+                    zone_entity: valve.travnik_3
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # RAINFALL SUMMARY (Compact, key metrics only)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - type: vertical-stack
+    cards:
+      - type: heading
+        heading: Srážky & Počasí
+        icon: mdi:water-percent
+
+      # Rain stats - compact glance card
       - type: entities
-        title: Režim a ochrany
+        title: Srážkové statistiky
         show_header_toggle: false
         entities:
-          - entity: switch.hunter_irrigation_manual_override
-          - entity: switch.hunter_irrigation_simulate
-          - entity: number.hunter_irrigation_rain_threshold
-          - entity: binary_sensor.vyborny_premyslovice_destovy_senzor
+          - entity: sensor.hunter_irrigation_rain_yesterday
+            name: Včera
+          - entity: sensor.hunter_irrigation_rain_day_before_yesterday
+            name: Předvolbou
+          - entity: sensor.hunter_irrigation_rain_last_7_days_total
+            name: Posledních 7 dní
+          - entity: sensor.weather_station_sws_12500_denni_uhrn_srazek
+            name: Dnes (zatím)
 
+      # Current weather conditions - glance
+      - type: glance
+        title: Aktuálně
+        show_icon: true
+        show_name: true
+        entities:
+          - entity: sensor.weather_station_sws_12500_venkovni_teplota
+            name: "🌡️"
+          - entity: sensor.weather_station_sws_12500_venkovni_vlhkost_vzduchu
+            name: "💧"
+          - entity: binary_sensor.vyborny_premyslovice_destovy_senzor
+            name: Déšť
+
+      # Weather forecast
+      - type: weather-forecast
+        entity: weather.ipemys5
+        forecast_type: daily
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # HUNTER SETTINGS (Zone duration, thresholds, modes)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - type: vertical-stack
+    cards:
+      - type: heading
+        heading: Nastavení
+        icon: mdi:cog
+
+      # Zone durations
       - type: entities
-        title: Délky zón
+        title: Trvání zón (minuty)
         show_header_toggle: false
         entities:
           - entity: number.hunter_irrigation_zone_1_duration
           - entity: number.hunter_irrigation_zone_2_duration
           - entity: number.hunter_irrigation_zone_3_duration
 
+      # Rain & safety modes
       - type: entities
-        title: Přehled srážek
+        title: Režimy
         show_header_toggle: false
         entities:
-          - entity: sensor.hunter_irrigation_rain_yesterday
-          - entity: sensor.hunter_irrigation_rain_day_before_yesterday
-          - entity: sensor.hunter_irrigation_rain_last_7_days_total
-          - entity: sensor.weather_station_sws_12500_denni_uhrn_srazek
-          - entity: sensor.weather_station_sws_12500_srazky
+          - entity: switch.hunter_irrigation_manual_override
+          - entity: switch.hunter_irrigation_simulate
+          - entity: number.hunter_irrigation_rain_threshold
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GARDENA NEXT CYCLES (Plánované časy)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - type: vertical-stack
+    cards:
+      - type: heading
+        heading: Plán
+        icon: mdi:calendar-clock
 
       - type: entities
-        title: Gardena plán (nativní)
+        title: Další polití
         show_header_toggle: false
         entities:
           - entity: sensor.travnik_1_next_cycle
-            name: Další cyklus zóna 1
+            name: Zóna 1
           - entity: sensor.travnik_2_next_cycle
-            name: Další cyklus zóna 2
+            name: Zóna 2
           - entity: sensor.travnik_3_next_cycle
-            name: Další cyklus zóna 3
-          - entity: binary_sensor.travnik_1_watering
-            name: Zóna 1 zalévá
-          - entity: binary_sensor.travnik_2_watering
-            name: Zóna 2 zalévá
-          - entity: binary_sensor.travnik_3_watering
-            name: Zóna 3 zalévá
+            name: Zóna 3
 
-      - type: entities
-        title: Gardena auto/manual
-        show_header_toggle: false
-        entities:
-          - entity: switch.travnik_1_automatic_watering
-            name: Auto zóna 1
-          - entity: switch.travnik_2_automatic_watering
-            name: Auto zóna 2
-          - entity: switch.travnik_3_automatic_watering
-            name: Auto zóna 3
-          - entity: switch.travnik_1_manual_watering
-            name: Manuál zóna 1
-          - entity: switch.travnik_2_manual_watering
-            name: Manuál zóna 2
-          - entity: switch.travnik_3_manual_watering
-            name: Manuál zóna 3
-
-      - type: horizontal-stack
-        cards:
-          - type: button
-            name: Start zóna 1
-            icon: mdi:play
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.start_zone
-              data:
-                zone_entity: valve.travnik_1
-          - type: button
-            name: Stop zóna 1
-            icon: mdi:stop
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.stop_zone
-              data:
-                zone_entity: valve.travnik_1
-          - type: button
-            name: Preview zóna 1
-            icon: mdi:eye
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.preview_zone
-              data:
-                zone_entity: valve.travnik_1
-
-      - type: horizontal-stack
-        cards:
-          - type: button
-            name: Start zóna 2
-            icon: mdi:play
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.start_zone
-              data:
-                zone_entity: valve.travnik_2
-          - type: button
-            name: Stop zóna 2
-            icon: mdi:stop
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.stop_zone
-              data:
-                zone_entity: valve.travnik_2
-          - type: button
-            name: Preview zóna 2
-            icon: mdi:eye
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.preview_zone
-              data:
-                zone_entity: valve.travnik_2
-
-      - type: horizontal-stack
-        cards:
-          - type: button
-            name: Start zóna 3
-            icon: mdi:play
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.start_zone
-              data:
-                zone_entity: valve.travnik_3
-          - type: button
-            name: Stop zóna 3
-            icon: mdi:stop
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.stop_zone
-              data:
-                zone_entity: valve.travnik_3
-          - type: button
-            name: Preview zóna 3
-            icon: mdi:eye
-            tap_action:
-              action: call-service
-              service: hunter_irrigation.preview_zone
-              data:
-                zone_entity: valve.travnik_3
-
-  - type: grid
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DETAILED WEATHER (Advanced info)
+  # ═══════════════════════════════════════════════════════════════════════════
+  - type: vertical-stack
     cards:
       - type: heading
-        heading: Počasí
-        icon: mdi:weather-partly-cloudy
-
-      - type: weather-forecast
-        entity: weather.ipemys5
-        forecast_type: daily
+        heading: Detaily meteostanice
+        icon: mdi:weather-cloudy
 
       - type: entities
         title: Meteostanice SWS 12500
@@ -177,3 +233,5 @@ sections:
           - entity: sensor.weather_station_sws_12500_poryvy_vetru
           - entity: sensor.weather_station_sws_12500_uv_index
           - entity: sensor.weather_station_sws_12500_slunecni_osvit
+          - entity: sensor.weather_station_sws_12500_srazky
+            name: Srážky (aktuální)

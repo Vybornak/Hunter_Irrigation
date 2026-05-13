@@ -128,7 +128,7 @@ class HunterRainStatSensor(CoordinatorEntity[HunterRainStatsCoordinator], Sensor
         self._key = key
         self._attr_unique_id = f"hunter_irrigation_{key}"
         self._attr_translation_key = key
-        self.entity_id = f"sensor.hunter_irrigation_{key}"
+        self._attr_entity_id = f"sensor.hunter_irrigation_{key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry_id)},
             name="Hunter Irrigation",
@@ -138,5 +138,13 @@ class HunterRainStatSensor(CoordinatorEntity[HunterRainStatsCoordinator], Sensor
 
     @property
     def native_value(self) -> float | None:
-        value = self.coordinator.data.get(self._key) if self.coordinator.data else None
-        return float(value) if value is not None else None
+        if not self.coordinator.data:
+            return None
+        value = self.coordinator.data.get(self._key)
+        if value is None:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            _LOGGER.warning("Invalid rain stat value: %s", value)
+            return None
