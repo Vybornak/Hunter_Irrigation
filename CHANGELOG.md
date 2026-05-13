@@ -6,6 +6,11 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.4] - 2026-05-13
+
+### Opraveno
+- Oprava struktury ZIP archivu pro správnou instalaci přes HACS.
+
 ## [1.0.3] - 2026-05-13
 
 ### Přidáno
