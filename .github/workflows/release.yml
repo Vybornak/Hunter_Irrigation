@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release (example: 1.0.1)
+        required: true
+        type: string
+      prerelease:
+        description: Mark release as prerelease
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update manifest version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          python - << 'PY'
+          import json
+          from pathlib import Path
+
+          version = "${{ inputs.version }}"
+          path = Path("custom_components/hunter_irrigation/manifest.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          data["version"] = version
+          path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          PY
+
+      - name: Commit version bump
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components/hunter_irrigation/manifest.json
+          git commit -m "Release ${VERSION}" || echo "No changes to commit"
+
+      - name: Create tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git tag "v${VERSION}" || echo "Tag already exists"
+
+      - name: Push changes and tags
+        run: |
+          git push
+          git push --tags
+
+      - name: Pack integration
+        run: |
+          mkdir -p dist
+          cd custom_components
+          zip -r ../dist/hunter_irrigation.zip hunter_irrigation
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Hunter Irrigation v${{ inputs.version }}
+          prerelease: ${{ inputs.prerelease }}
+          files: dist/hunter_irrigation.zip
