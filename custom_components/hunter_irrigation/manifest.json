@@ -1,9 +1,9 @@
 {
+  "domain": "hunter_irrigation",
+  "name": "Hunter Irrigation",
   "after_dependencies": [
     "recorder"
   ],
-  "domain": "hunter_irrigation",
-  "name": "Hunter Irrigation",
   "codeowners": [],
   "config_flow": true,
   "dependencies": [],
