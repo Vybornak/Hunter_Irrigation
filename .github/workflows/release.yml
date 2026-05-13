@@ -57,7 +57,7 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          git tag "v${VERSION}" || echo "Tag already exists"
+          git tag "${VERSION}" || echo "Tag already exists"
 
       - name: Push changes and tags
         run: |
@@ -73,7 +73,8 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.version }}
-          name: Hunter Irrigation v${{ inputs.version }}
+          tag_name: ${{ inputs.version }}
+          name: Hunter Irrigation ${{ inputs.version }}
           prerelease: ${{ inputs.prerelease }}
           files: dist/hunter_irrigation.zip
+          body_path: CHANGELOG.md

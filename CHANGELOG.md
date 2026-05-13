@@ -11,6 +11,8 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 - Doplněn klíč `issue_tracker` do integračního manifestu.
 - Přidány lokální brand assets v cestě `custom_components/hunter_irrigation/brand/`.
 - Odstraněn nepodporovaný klíč `homeassistant` z integračního manifestu kvůli Hassfest validaci.
+- Přepnuto na release režim HACS (`zip_release` + `filename`), aby se v HA zobrazovala čísla verzí místo hashů commitů.
+- Release workflow nyní publikuje poznámky ze souboru `CHANGELOG.md`.
 
 ## [1.0.1] - 2026-05-13
 
