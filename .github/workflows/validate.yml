@@ -27,5 +27,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Hassfest
-        uses: home-assistant/actions/hassfest@master
+      - name: Hassfest (retry)
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/home-assistant/hassfest:latest"
+
+          # GHCR can occasionally time out on hosted runners; retry pull/run.
+          for i in 1 2 3; do
+            echo "Attempt $i: docker pull $IMAGE"
+            if docker pull "$IMAGE"; then
+              break
+            fi
+            if [ "$i" -eq 3 ]; then
+              echo "Failed to pull $IMAGE after 3 attempts"
+              exit 1
+            fi
+            sleep 20
+          done
+
+          for i in 1 2 3; do
+            echo "Attempt $i: run hassfest"
+            if docker run --rm -v "${{ github.workspace }}:/github/workspace" "$IMAGE"; then
+              break
+            fi
+            if [ "$i" -eq 3 ]; then
+              echo "Hassfest failed after 3 attempts"
+              exit 1
+            fi
+            sleep 15
+          done
