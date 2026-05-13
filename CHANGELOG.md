@@ -1,10 +1,16 @@
-# Seznam změn
+﻿# Seznam změn
 
 V tomto souboru jsou evidovány všechny důležité změny projektu.
 
 Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
+
+## [1.0.7] - 2026-05-13
+
+### Opraveno
+- Spravna HACS instalace: content_in_root false pro validaci repozitare + soubory prime v koreni ZIPu pro extrakci bez zdvojene slozky.
+
 
 ## [1.0.6] - 2026-05-13
 
@@ -63,3 +69,5 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 - Služby: `hunter_irrigation.start_zone`, `hunter_irrigation.stop_zone`, `hunter_irrigation.preview_zone`.
 - Logika blokování zálivky podle deště (denní déšť, okamžité srážky, binární senzor deště).
 - Zpětná kompatibilita události `irrigation.preview_start_request`.
+
+
