@@ -116,12 +116,12 @@ jobs:
                   date_text = raw_date
 
           body = "\n".join(body_lines).strip()
-            Path("RELEASE_NOTES.md").write_text(f"{body}\n", encoding="utf-8")
+          Path("RELEASE_NOTES.md").write_text(f"{body}\n", encoding="utf-8")
 
-            release_title = "Update"
-            if date_text:
+          release_title = "Update"
+          if date_text:
               release_title = date_text
-            Path("RELEASE_TITLE.txt").write_text(release_title, encoding="utf-8")
+          Path("RELEASE_TITLE.txt").write_text(release_title, encoding="utf-8")
           PY
 
       - name: Create or update GitHub release
