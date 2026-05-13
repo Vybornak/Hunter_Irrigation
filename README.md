@@ -100,11 +100,17 @@ Postup je jednoduchý:
 Když budeš chtít vydat novou verzi, provedeme vždy stejný postup:
 
 1. Doplnit novou sekci verze do `CHANGELOG.md`.
-2. Zvýšit verzi v `custom_components/hunter_irrigation/manifest.json` (stejná verze jako release tag).
-3. Commit + push do `main`.
-4. Vytvořit a pushnout git tag (např. `1.0.1`).
-5. Vytvořit GitHub Release nad tímto tagem.
-6. Do GitHub Release vložit text z odpovídající sekce v `CHANGELOG.md`.
+2. Commit + push do `main`.
+3. Ověřit přihlášení GitHub CLI:
+  - `gh auth status`
+4. Spustit release workflow přes CLI:
+  - `gh workflow run release.yml -f version=1.0.4 -f prerelease=false`
+5. Ověřit běh workflow:
+  - `gh run list --workflow release.yml --limit 1`
+  - `gh run view <run_id>`
+6. Po dokončení workflow zkontrolovat release:
+  - `gh release view 1.0.4`
 7. V HACS spustit `Check for updates` (nebo počkat na refresh cache).
 
+Poznámka: Verzi v `manifest.json`, git tag i GitHub Release vytváří release workflow automaticky.
 Poznámka: Právě release notes z GitHub Release se zobrazují v HACS/HA u dané verze.
