@@ -104,11 +104,29 @@ jobs:
           Path("RELEASE_NOTES.md").write_text(section, encoding="utf-8")
           PY
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ inputs.version }}
-          name: Hunter Irrigation ${{ inputs.version }}
-          prerelease: ${{ inputs.prerelease }}
-          files: dist/hunter_irrigation.zip
-          body_path: RELEASE_NOTES.md
+      - name: Create or update GitHub release
+        env:
+          VERSION: ${{ inputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TITLE="Hunter Irrigation ${VERSION}"
+          ASSET="dist/hunter_irrigation.zip"
+
+          if gh release view "${VERSION}" >/dev/null 2>&1; then
+            gh release upload "${VERSION}" "${ASSET}" --clobber
+            if [ "${PRERELEASE}" = "true" ]; then
+              gh release edit "${VERSION}" --title "${TITLE}" --notes-file RELEASE_NOTES.md --prerelease
+            else
+              gh release edit "${VERSION}" --title "${TITLE}" --notes-file RELEASE_NOTES.md
+            fi
+          else
+            if [ "${PRERELEASE}" = "true" ]; then
+              gh release create "${VERSION}" "${ASSET}" --title "${TITLE}" --notes-file RELEASE_NOTES.md --prerelease
+            else
+              gh release create "${VERSION}" "${ASSET}" --title "${TITLE}" --notes-file RELEASE_NOTES.md
+            fi
+          fi
