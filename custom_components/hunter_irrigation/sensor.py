@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import inspect
 import logging
 from typing import Any
 
@@ -100,6 +101,22 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
 
         return round(total, 2)
 
+    async def _async_get_history_states(self, start: Any, end: Any) -> list[Any]:
+        """Read recorder history and support both async/sync history APIs."""
+        result = history.get_significant_states(
+            self.hass,
+            start,
+            end,
+            [self._entity_id],
+            include_start_time_state=True,
+            significant_changes_only=False,
+            minimal_response=False,
+            no_attributes=True,
+        )
+        if inspect.isawaitable(result):
+            result = await result
+        return result.get(self._entity_id, [])
+
     async def _async_update_data(self) -> dict[str, float | None]:
         now = dt_util.now()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -111,41 +128,13 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
             start_utc = dt_util.as_utc(week_start)
             end_utc = dt_util.as_utc(today_start)
 
-            states_by_entity = await history.get_significant_states(
-                self.hass,
-                start_utc,
-                end_utc,
-                [self._entity_id],
-                include_start_time_state=True,
-                significant_changes_only=False,
-                minimal_response=False,
-                no_attributes=True,
+            states = await self._async_get_history_states(start_utc, end_utc)
+            states_24h = await self._async_get_history_states(
+                dt_util.as_utc(start_24h), dt_util.as_utc(now)
             )
-            states = states_by_entity.get(self._entity_id, [])
-
-            states_24h_by_entity = await history.get_significant_states(
-                self.hass,
-                dt_util.as_utc(start_24h),
-                dt_util.as_utc(now),
-                [self._entity_id],
-                include_start_time_state=True,
-                significant_changes_only=False,
-                minimal_response=False,
-                no_attributes=True,
+            states_48h = await self._async_get_history_states(
+                dt_util.as_utc(start_48h), dt_util.as_utc(now)
             )
-            states_24h = states_24h_by_entity.get(self._entity_id, [])
-
-            states_48h_by_entity = await history.get_significant_states(
-                self.hass,
-                dt_util.as_utc(start_48h),
-                dt_util.as_utc(now),
-                [self._entity_id],
-                include_start_time_state=True,
-                significant_changes_only=False,
-                minimal_response=False,
-                no_attributes=True,
-            )
-            states_48h = states_48h_by_entity.get(self._entity_id, [])
 
             daily_max: dict[Any, float] = {}
             for state in states:
@@ -252,11 +241,21 @@ class HunterRainGuardStatusSensor(SensorEntity):
         manual_override = self._runtime._is_manual_override()
 
         if self._key == "status":
-            return "allow" if manual_override or not blocked else "blocked"
+            return "povoleno" if manual_override or not blocked else "blokovano"
 
         if manual_override:
-            return "manual_override"
-        return str(rain_state.get("rain_block_reason", "none"))
+            return "manualni override"
+
+        reason_map = {
+            "rain_24h_threshold": "blokovano: srazky za 24 hodin",
+            "rain_48h_threshold": "blokovano: srazky za 48 hodin",
+            "instant_rain": "blokovano: prave prsi",
+            "rain_binary": "blokovano: destovy senzor",
+            "daily_threshold_fallback": "blokovano: denni soucet srazek",
+            "none": "bez blokace",
+        }
+        reason = str(rain_state.get("rain_block_reason", "none"))
+        return reason_map.get(reason, "bez blokace")
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:

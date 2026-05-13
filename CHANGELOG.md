@@ -6,6 +6,14 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.16] - 2026-05-13
+
+### Opraveno
+- Dashboard example používá reálné české entity (`rain_guard_stav`, `rain_guard_duvod`, `srazky_za_poslednich_24_hodin`, `srazky_za_poslednich_48_hodin`, `prah_srazek_24_h`, `prah_srazek_48_h`).
+- Výpočet srážek je kompatibilní s async i sync variantou Recorder API (`history.get_significant_states`), takže senzory už nepadají do `Neznámý`.
+- Rain guard vrací plně české stavy a důvody blokace (např. `blokovano: srazky za 24 hodin`).
+- Rain guard logika umí číst limity 24 h / 48 h i z lokalizovaných entity ID, takže funguje po update bez ručního mapování.
+
 ## [1.0.15] - 2026-05-13
 
 ### Přidáno

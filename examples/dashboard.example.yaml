@@ -25,10 +25,10 @@ cards:
         show_state: true
         state_color: true
         entities:
-          - entity: sensor.hunter_irrigation_rain_guard_status
+          - entity: sensor.hunter_irrigation_rain_guard_stav
             name: Status
             icon: mdi:shield-check
-          - entity: sensor.hunter_irrigation_rain_guard_reason
+          - entity: sensor.hunter_irrigation_rain_guard_duvod
             name: Duvod
             icon: mdi:alert-circle-outline
 
@@ -140,9 +140,9 @@ cards:
         title: Srazkove statistiky
         show_header_toggle: false
         entities:
-          - entity: sensor.hunter_irrigation_rain_last_24_hours_total
+          - entity: sensor.hunter_irrigation_srazky_za_poslednich_24_hodin
             name: Poslednich 24 h
-          - entity: sensor.hunter_irrigation_rain_last_48_hours_total
+          - entity: sensor.hunter_irrigation_srazky_za_poslednich_48_hodin
             name: Poslednich 48 h
           - entity: sensor.hunter_irrigation_rain_yesterday
             name: Vcera
@@ -192,7 +192,7 @@ cards:
             name: Manual override (ignoruj dest)
           - entity: switch.hunter_irrigation_simulate
             name: Simulace (bez fyzickeho otevreni)
-          - entity: number.hunter_irrigation_rain_threshold
-            name: Rain threshold 24 h (mm)
-          - entity: number.hunter_irrigation_rain_threshold_48h
-            name: Rain threshold 48 h (mm)
+          - entity: number.hunter_irrigation_prah_srazek_24_h
+            name: Limit srazek 24 h (mm)
+          - entity: number.hunter_irrigation_prah_srazek_48_h
+            name: Limit srazek 48 h (mm)

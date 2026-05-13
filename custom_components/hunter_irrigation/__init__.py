@@ -240,12 +240,19 @@ class HunterIrrigation:
         binary = self._read_binary_sensor(self.rain_config.get(CONF_RAIN_BINARY_SENSOR))
         threshold_entity = self.rain_config.get(CONF_RAIN_THRESHOLD_ENTITY)
         threshold_from_entity = self._read_float_sensor(threshold_entity)
+        if threshold_from_entity is None:
+            threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_prah_srazek_24_h")
+        if threshold_from_entity is None:
+            threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_rain_threshold")
         threshold_24h = (
             float(threshold_from_entity)
             if threshold_from_entity is not None
             else self.runtime_rain_threshold
         )
-        threshold_48h = self.runtime_rain_threshold_48h
+        threshold_48h = self._read_float_sensor("number.hunter_irrigation_prah_srazek_48_h")
+        if threshold_48h is None:
+            threshold_48h = self._read_float_sensor("number.hunter_irrigation_rain_threshold_48h")
+        threshold_48h = float(threshold_48h) if threshold_48h is not None else self.runtime_rain_threshold_48h
 
         reason = "none"
         blocked = False
