@@ -70,6 +70,40 @@ jobs:
           cd custom_components
           zip -r ../dist/hunter_irrigation.zip hunter_irrigation
 
+      - name: Build release notes from selected version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          python - << 'PY'
+          import re
+          from pathlib import Path
+
+          version = "${{ inputs.version }}"
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          lines = changelog.splitlines()
+
+          start_idx = None
+          for idx, line in enumerate(lines):
+              if re.match(rf"^##\s+\[{re.escape(version)}\]\b", line):
+                  start_idx = idx
+                  break
+
+          if start_idx is None:
+              raise SystemExit(
+                  f"Nelze najit sekci pro verzi {version} v CHANGELOG.md. "
+                  "Nejprve ji doplnte."
+              )
+
+          end_idx = len(lines)
+          for idx in range(start_idx + 1, len(lines)):
+              if lines[idx].startswith("## "):
+                  end_idx = idx
+                  break
+
+          section = "\n".join(lines[start_idx:end_idx]).strip() + "\n"
+          Path("RELEASE_NOTES.md").write_text(section, encoding="utf-8")
+          PY
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -77,4 +111,4 @@ jobs:
           name: Hunter Irrigation ${{ inputs.version }}
           prerelease: ${{ inputs.prerelease }}
           files: dist/hunter_irrigation.zip
-          body_path: CHANGELOG.md
+          body_path: RELEASE_NOTES.md
