@@ -1,0 +1,11 @@
+{
+  "domain": "hunter_irrigation",
+  "name": "Hunter Irrigation",
+  "version": "1.0.0",
+  "documentation": "https://github.com/CHANGE_ME/Hunter_irrigation",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": [],
+  "iot_class": "local_polling",
+  "homeassistant": "2024.12.0"
+}

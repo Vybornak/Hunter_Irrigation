@@ -1,0 +1,401 @@
+"""Hunter Irrigation custom integration."""
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+import voluptuous as vol
+
+from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
+from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.event import async_call_later
+
+from .const import (
+    CONF_DAILY_RAIN_SENSOR,
+    CONF_DURATION_ENTITY,
+    CONF_DURATION_MIN,
+    CONF_INSTANT_RAIN_SENSOR,
+    CONF_MANUAL_OVERRIDE_ENTITY,
+    CONF_RAIN,
+    CONF_RAIN_BINARY_SENSOR,
+    CONF_RAIN_THRESHOLD,
+    CONF_SIMULATE_ENTITY,
+    CONF_SKIP_RAIN_CHECK,
+    CONF_ZONE,
+    CONF_ZONE_ENTITY,
+    CONF_ZONES,
+    DOMAIN,
+    EVENT_OLD_PREVIEW_RESULT,
+    EVENT_OLD_START_REQUEST,
+    EVENT_PREVIEW_RESULT,
+    EVENT_RUN_RESULT,
+    SERVICE_PREVIEW_ZONE,
+    SERVICE_START_ZONE,
+    SERVICE_STOP_ZONE,
+    DEFAULT_DURATION_MIN,
+    DEFAULT_RAIN_THRESHOLD,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+ZONE_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_NAME): cv.string,
+        vol.Required(CONF_ENTITY_ID): cv.entity_id,
+        vol.Optional(CONF_DURATION_MIN, default=DEFAULT_DURATION_MIN): vol.Coerce(float),
+        vol.Optional(CONF_DURATION_ENTITY): cv.entity_id,
+    }
+)
+
+RAIN_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_DAILY_RAIN_SENSOR): cv.entity_id,
+        vol.Optional(CONF_INSTANT_RAIN_SENSOR): cv.entity_id,
+        vol.Optional(CONF_RAIN_BINARY_SENSOR): cv.entity_id,
+        vol.Optional(CONF_RAIN_THRESHOLD, default=DEFAULT_RAIN_THRESHOLD): vol.Coerce(float),
+    }
+)
+
+CONFIG_SCHEMA = vol.Schema(
+    {
+        DOMAIN: vol.Schema(
+            {
+                vol.Required(CONF_ZONES): vol.All(cv.ensure_list, [ZONE_SCHEMA]),
+                vol.Optional(CONF_RAIN): RAIN_SCHEMA,
+                vol.Optional(CONF_MANUAL_OVERRIDE_ENTITY): cv.entity_id,
+                vol.Optional(CONF_SIMULATE_ENTITY): cv.entity_id,
+            }
+        )
+    },
+    extra=vol.ALLOW_EXTRA,
+)
+
+START_ZONE_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_ZONE): cv.string,
+        vol.Optional(CONF_ZONE_ENTITY): cv.entity_id,
+        vol.Optional(CONF_DURATION_MIN): vol.Coerce(float),
+        vol.Optional(CONF_SKIP_RAIN_CHECK, default=False): cv.boolean,
+    }
+)
+
+STOP_ZONE_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_ZONE): cv.string,
+        vol.Optional(CONF_ZONE_ENTITY): cv.entity_id,
+    }
+)
+
+PREVIEW_ZONE_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_ZONE): cv.string,
+        vol.Optional(CONF_ZONE_ENTITY): cv.entity_id,
+        vol.Optional(CONF_DURATION_MIN): vol.Coerce(float),
+    }
+)
+
+
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+    integration_config = config.get(DOMAIN)
+    if not integration_config:
+        return True
+
+    coordinator = HunterIrrigation(hass, integration_config)
+    hass.data[DOMAIN] = coordinator
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_START_ZONE,
+        coordinator.async_handle_start_zone,
+        schema=START_ZONE_SERVICE_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_STOP_ZONE,
+        coordinator.async_handle_stop_zone,
+        schema=STOP_ZONE_SERVICE_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PREVIEW_ZONE,
+        coordinator.async_handle_preview_zone,
+        schema=PREVIEW_ZONE_SERVICE_SCHEMA,
+    )
+
+    hass.bus.async_listen(EVENT_OLD_START_REQUEST, coordinator.async_handle_start_event)
+
+    _LOGGER.info("Hunter Irrigation initialized with %s zones", len(coordinator.zone_by_name))
+    return True
+
+
+class HunterIrrigation:
+    def __init__(self, hass: HomeAssistant, config: dict[str, Any]) -> None:
+        self.hass = hass
+        self.zone_by_name: dict[str, dict[str, Any]] = {}
+        self.zone_by_entity: dict[str, dict[str, Any]] = {}
+        for zone in config[CONF_ZONES]:
+            name = zone[CONF_NAME]
+            self.zone_by_name[name] = zone
+            self.zone_by_entity[zone[CONF_ENTITY_ID]] = zone
+
+        self.rain_config = config.get(CONF_RAIN, {})
+        self.manual_override_entity = config.get(CONF_MANUAL_OVERRIDE_ENTITY)
+        self.simulate_entity = config.get(CONF_SIMULATE_ENTITY)
+        self.active_timers: dict[str, callback] = {}
+
+    def _get_zone_config(
+        self, zone_name: str | None, entity_id: str | None
+    ) -> dict[str, Any]:
+        if zone_name:
+            zone = self.zone_by_name.get(zone_name)
+            if not zone:
+                raise HomeAssistantError(
+                    f"Hunter Irrigation zone '{zone_name}' is not configured"
+                )
+            return zone
+
+        if entity_id:
+            return self.zone_by_entity.get(entity_id, {CONF_ENTITY_ID: entity_id})
+
+        raise HomeAssistantError(
+            "Hunter Irrigation service call must include 'zone' or 'zone_entity'"
+        )
+
+    def _resolve_duration(self, zone_config: dict[str, Any], override_duration: float | None) -> float:
+        if override_duration is not None:
+            return float(override_duration)
+
+        duration_entity = zone_config.get(CONF_DURATION_ENTITY)
+        if duration_entity:
+            state = self.hass.states.get(duration_entity)
+            if state and state.state not in ("unknown", "unavailable", "unavailable_due_to_dependencies"):
+                try:
+                    return float(state.state)
+                except (ValueError, TypeError):
+                    raise HomeAssistantError(
+                        f"Invalid duration value from {duration_entity}: {state.state}"
+                    )
+
+        duration_min = zone_config.get(CONF_DURATION_MIN)
+        if duration_min is not None:
+            return float(duration_min)
+
+        raise HomeAssistantError(
+            f"No duration configured for zone {zone_config.get(CONF_NAME, zone_config.get(CONF_ENTITY_ID))}"
+        )
+
+    def _read_float_sensor(self, entity_id: str | None) -> float | None:
+        if not entity_id:
+            return None
+        state = self.hass.states.get(entity_id)
+        if not state or state.state in ("unknown", "unavailable", "unavailable_due_to_dependencies"):
+            return None
+        try:
+            return float(state.state)
+        except (ValueError, TypeError):
+            return None
+
+    def _read_binary_sensor(self, entity_id: str | None) -> bool:
+        if not entity_id:
+            return False
+        return self.hass.states.is_state(entity_id, "on")
+
+    def _is_manual_override(self) -> bool:
+        if not self.manual_override_entity:
+            return False
+        return self.hass.states.is_state(self.manual_override_entity, "on")
+
+    def _is_simulation(self) -> bool:
+        if not self.simulate_entity:
+            return False
+        return self.hass.states.is_state(self.simulate_entity, "on")
+
+    def _is_rain_blocked(self) -> tuple[bool, dict[str, Any]]:
+        daily = self._read_float_sensor(self.rain_config.get(CONF_DAILY_RAIN_SENSOR))
+        instant = self._read_float_sensor(self.rain_config.get(CONF_INSTANT_RAIN_SENSOR))
+        binary = self._read_binary_sensor(self.rain_config.get(CONF_RAIN_BINARY_SENSOR))
+        threshold = float(self.rain_config.get(CONF_RAIN_THRESHOLD, DEFAULT_RAIN_THRESHOLD))
+
+        blocked = (
+            (daily is not None and daily >= threshold)
+            or (instant is not None and instant > 0)
+            or binary
+        )
+
+        return blocked, {
+            "daily_rain": daily,
+            "instant_rain": instant,
+            "rain_binary": binary,
+            "rain_threshold": threshold,
+        }
+
+    @callback
+    def _schedule_zone_close(self, entity_id: str, duration_min: float) -> None:
+        if cancel := self.active_timers.pop(entity_id, None):
+            cancel()
+
+        @callback
+        def _async_close_callback(_: Any) -> None:
+            self.active_timers.pop(entity_id, None)
+            self.hass.async_create_task(self._async_close_zone(entity_id))
+
+        self.active_timers[entity_id] = async_call_later(
+            self.hass, duration_min * 60, _async_close_callback
+        )
+
+    async def _async_close_zone(self, entity_id: str) -> None:
+        _LOGGER.debug("Closing irrigation entity %s after scheduled runtime", entity_id)
+        await self._async_call_switch_service(entity_id, False)
+
+    async def _async_call_switch_service(self, entity_id: str, turn_on: bool) -> None:
+        domain = entity_id.split(".", 1)[0]
+        if domain == "valve":
+            service = "open" if turn_on else "close"
+        elif domain == "switch":
+            service = "turn_on" if turn_on else "turn_off"
+        else:
+            service = "open" if turn_on else "close"
+
+        await self.hass.services.async_call(
+            domain,
+            service,
+            {CONF_ENTITY_ID: entity_id},
+            blocking=True,
+        )
+
+    def _fire_result_event(
+        self,
+        zone_name: str | None,
+        entity_id: str,
+        duration_min: float,
+        action: str,
+        blocked: bool,
+        preview: bool,
+        simulate: bool,
+        manual_override: bool,
+        rain_state: dict[str, Any],
+    ) -> None:
+        event_data = {
+            "zone": zone_name,
+            "zone_entity": entity_id,
+            "duration_min": duration_min,
+            "action": action,
+            "blocked": blocked,
+            "preview": preview,
+            "simulate": simulate,
+            "manual_override": manual_override,
+            **rain_state,
+        }
+        self.hass.bus.async_fire(EVENT_PREVIEW_RESULT if preview else EVENT_RUN_RESULT, event_data)
+        self.hass.bus.async_fire(EVENT_OLD_PREVIEW_RESULT, event_data)
+
+    async def _execute_zone(
+        self,
+        zone_config: dict[str, Any],
+        duration_min: float,
+        skip_rain_check: bool,
+        preview: bool,
+    ) -> None:
+        entity_id = zone_config[CONF_ENTITY_ID]
+        zone_name = zone_config.get(CONF_NAME)
+        manual_override = self._is_manual_override()
+        simulate = self._is_simulation()
+        blocked, rain_state = self._is_rain_blocked()
+
+        if blocked and not skip_rain_check and not manual_override:
+            _LOGGER.info(
+                "Hunter Irrigation blocked by rain for %s: %s",
+                entity_id,
+                rain_state,
+            )
+            self._fire_result_event(
+                zone_name,
+                entity_id,
+                duration_min,
+                "blocked",
+                True,
+                preview,
+                simulate,
+                manual_override,
+                rain_state,
+            )
+            return
+
+        if preview or simulate:
+            _LOGGER.info(
+                "Hunter Irrigation preview %s for %s: duration=%s simulate=%s",
+                "request" if preview else "run",
+                entity_id,
+                duration_min,
+                simulate,
+            )
+            self._fire_result_event(
+                zone_name,
+                entity_id,
+                duration_min,
+                "preview" if preview else "simulate",
+                False,
+                preview,
+                simulate,
+                manual_override,
+                rain_state,
+            )
+            return
+
+        await self._async_call_switch_service(entity_id, True)
+        self._schedule_zone_close(entity_id, duration_min)
+
+        self._fire_result_event(
+            zone_name,
+            entity_id,
+            duration_min,
+            "started",
+            False,
+            False,
+            simulate,
+            manual_override,
+            rain_state,
+        )
+
+    async def async_handle_start_zone(self, call: ServiceCall) -> None:
+        zone_config = self._get_zone_config(call.data.get(CONF_ZONE), call.data.get(CONF_ZONE_ENTITY))
+        duration_min = self._resolve_duration(zone_config, call.data.get(CONF_DURATION_MIN))
+        await self._execute_zone(
+            zone_config=zone_config,
+            duration_min=duration_min,
+            skip_rain_check=call.data.get(CONF_SKIP_RAIN_CHECK, False),
+            preview=False,
+        )
+
+    async def async_handle_preview_zone(self, call: ServiceCall) -> None:
+        zone_config = self._get_zone_config(call.data.get(CONF_ZONE), call.data.get(CONF_ZONE_ENTITY))
+        duration_min = self._resolve_duration(zone_config, call.data.get(CONF_DURATION_MIN))
+        await self._execute_zone(
+            zone_config=zone_config,
+            duration_min=duration_min,
+            skip_rain_check=True,
+            preview=True,
+        )
+
+    async def async_handle_stop_zone(self, call: ServiceCall) -> None:
+        zone_config = self._get_zone_config(call.data.get(CONF_ZONE), call.data.get(CONF_ZONE_ENTITY))
+        entity_id = zone_config[CONF_ENTITY_ID]
+        if cancel := self.active_timers.pop(entity_id, None):
+            cancel()
+        await self._async_call_switch_service(entity_id, False)
+        _LOGGER.info("Hunter Irrigation stopped %s", entity_id)
+
+    async def async_handle_start_event(self, event: Any) -> None:
+        zone_name = event.data.get(CONF_ZONE)
+        entity_id = event.data.get(CONF_ZONE_ENTITY)
+        duration = event.data.get(CONF_DURATION_MIN)
+        zone_config = self._get_zone_config(zone_name, entity_id)
+        duration_min = self._resolve_duration(zone_config, duration)
+        await self._execute_zone(
+            zone_config=zone_config,
+            duration_min=duration_min,
+            skip_rain_check=False,
+            preview=False,
+        )
