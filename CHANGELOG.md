@@ -6,6 +6,11 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.33] - 2026-05-14
+
+### Opraveno
+- Vráceny sekce "Limity srážek" a "Srážkové přehledy" do dashboardu. Smazana byla jen sekce "Rezimy".
+
 ## [1.0.32] - 2026-05-14
 
 ### Opraveno
