@@ -304,9 +304,9 @@ class HunterIrrigation:
         if threshold_from_entity is None:
             threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_rain_threshold_24h")
         if threshold_from_entity is None:
-                threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_prah_srazek_24_h")
-            if threshold_from_entity is None:
-                threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_rain_threshold")
+            threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_prah_srazek_24_h")
+        if threshold_from_entity is None:
+            threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_rain_threshold")
         threshold_24h = (
             float(threshold_from_entity)
             if threshold_from_entity is not None
