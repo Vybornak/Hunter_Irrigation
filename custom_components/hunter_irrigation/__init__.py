@@ -11,6 +11,7 @@ from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_call_later
 
 from .const import (
@@ -102,6 +103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    await _async_migrate_entity_ids(hass)
 
     _LOGGER.info("Hunter Irrigation initialized with %s zones", len(coordinator.zone_by_name))
     return True
@@ -109,6 +111,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
 
 async def _async_update_listener(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def _async_migrate_entity_ids(hass: HomeAssistant) -> None:
+    """Migrate historical localized entity IDs to stable English object IDs."""
+    registry = er.async_get(hass)
+    migration_map = {
+        "sensor.hunter_irrigation_rain_guard_stav": "sensor.hunter_irrigation_rain_guard_status",
+        "sensor.hunter_irrigation_rain_guard_duvod": "sensor.hunter_irrigation_rain_guard_reason",
+        "sensor.hunter_irrigation_srazky_za_poslednich_24_hodin": "sensor.hunter_irrigation_rain_last_24_hours_total",
+        "sensor.hunter_irrigation_srazky_za_poslednich_48_hodin": "sensor.hunter_irrigation_rain_last_48_hours_total",
+        "number.hunter_irrigation_prah_srazek_24_h": "number.hunter_irrigation_rain_threshold",
+        "number.hunter_irrigation_prah_srazek_48_h": "number.hunter_irrigation_rain_threshold_48h",
+    }
+
+    for old_entity_id, new_entity_id in migration_map.items():
+        old_entry = registry.async_get(old_entity_id)
+        if old_entry is None:
+            continue
+        if registry.async_get(new_entity_id) is not None:
+            continue
+        try:
+            registry.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
+            _LOGGER.info("Migrated entity_id from %s to %s", old_entity_id, new_entity_id)
+        except ValueError as err:
+            _LOGGER.warning("Failed to migrate entity %s -> %s: %s", old_entity_id, new_entity_id, err)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> bool:

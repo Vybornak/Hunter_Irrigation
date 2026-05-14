@@ -103,19 +103,46 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
 
     async def _async_get_history_states(self, start: Any, end: Any) -> list[Any]:
         """Read recorder history and support both async/sync history APIs."""
-        result = history.get_significant_states(
-            self.hass,
-            start,
-            end,
-            [self._entity_id],
-            include_start_time_state=True,
-            significant_changes_only=False,
-            minimal_response=False,
-            no_attributes=True,
-        )
-        if inspect.isawaitable(result):
-            result = await result
-        return result.get(self._entity_id, [])
+        call_variants = [
+            {
+                "include_start_time_state": True,
+                "significant_changes_only": False,
+                "minimal_response": False,
+                "no_attributes": True,
+            },
+            {
+                "include_start_time_state": True,
+                "significant_changes_only": False,
+                "no_attributes": True,
+            },
+            {
+                "include_start_time_state": True,
+                "significant_changes_only": False,
+            },
+            {},
+        ]
+
+        last_err: Exception | None = None
+        for extra_kwargs in call_variants:
+            try:
+                result = history.get_significant_states(
+                    self.hass,
+                    start,
+                    end,
+                    [self._entity_id],
+                    **extra_kwargs,
+                )
+                if inspect.isawaitable(result):
+                    result = await result
+                if isinstance(result, dict):
+                    return result.get(self._entity_id, [])
+            except TypeError as err:
+                last_err = err
+                continue
+
+        if last_err:
+            raise last_err
+        return []
 
     async def _async_update_data(self) -> dict[str, float | None]:
         now = dt_util.now()

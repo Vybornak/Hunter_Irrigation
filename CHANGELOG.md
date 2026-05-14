@@ -6,6 +6,16 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.17] - 2026-05-14
+
+### Opraveno
+- Stabilizováno načítání Recorder historie pro srážkové souhrny (`včera`, `předevčírem`, `24 h`, `48 h`, `7 dní`) přes kompatibilní volání API napříč verzemi Home Assistant.
+- Sjednoceny interní entity ID na anglické názvy.
+- Přidána migrace historických lokalizovaných entity ID (CZ) na anglické entity ID.
+
+### Změněno
+- Dashboard example znovu používá anglické interní entity ID a pouze viditelné názvy nechává v češtině.
+
 ## [1.0.16] - 2026-05-13
 
 ### Opraveno
