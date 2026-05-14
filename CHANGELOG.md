@@ -6,7 +6,24 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
-## [1.0.17] - 2026-05-14
+## [1.0.19] - 2025-05-14
+
+### Opraveno (KRITICKÉ)
+- **Rain stats KONEČNĚ plnění daty**: Coordinator se nyní inicializuje hned při startu (nie v background). Srážkové sensory by měly vracet reálná čísla místo Unknown/None.
+- **Interval srážek**: Snížen na 1 minutu pro debugging. Po ověření že funguje, změnit na 60 minut v sensor.py.
+- **Entity registry migration**: Přesunuta DŘÍVE (PŘED platform setup), aby se staré CZ ID mapovaly správně na nové EN ID. `number.hunter_irrigation_rain_threshold` teď funguje.
+- **Podrobné logování**: Všechny kroky mají tagy [RAIN], [RAIN DATA], [BLOCK], [UNBLOCK], [MANUAL] pro snadnou diagnózu.
+
+### Přidáno
+- **Suspend/Resume venilů**: Když je blokace aktivní → `switch.travnik_X_automatic_watering = OFF` (suspenduje plán v jednotce). Po odblokování → `ON` (obnoví plán).
+- **Manual rain block helper**: `input_boolean.hunter_irrigation_manual_rain_block` - vytvořen automaticky. Použij pro testování blokace bez fyzických srážek.
+- **Event listener**: Sleduje změny manual_rain_block a okamžitě aktualizuje runtime stav.
+
+## [1.0.18] - 2025-05-13
+
+Reverted (nebyly aplikovány správně)
+
+## [1.0.17] - 2025-05-13
 
 ### Opraveno
 - Stabilizováno načítání Recorder historie pro srážkové souhrny (`včera`, `předevčírem`, `24 h`, `48 h`, `7 dní`) přes kompatibilní volání API napříč verzemi Home Assistant.
