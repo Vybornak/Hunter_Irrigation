@@ -6,6 +6,17 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.20] - 2025-05-14
+
+### Opraveno (KRITICKÉ)
+- **Blocking call error VYŘEŠEN**: Změnit z `history.get_significant_states()` (synchronní) na `history.async_get_significant_states()` (async)
+- Předchozí verze způsobovala "RuntimeError: Caught blocking call" v logu
+- Rain stats by nyní měly načítaní BEZ chyb
+- Logování zůstává podrobné ([RAIN DATA] tagy) pro diagnózu
+
+### Přidáno
+- `input_boolean.hunter_irrigation_manual_rain_block` v dashboard example
+
 ## [1.0.19] - 2025-05-14
 
 ### Opraveno (KRITICKÉ)
