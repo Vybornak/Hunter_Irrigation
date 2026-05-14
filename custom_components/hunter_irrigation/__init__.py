@@ -202,7 +202,12 @@ class HunterIrrigation:
 
     def _iter_zone_auto_switches(self) -> list[tuple[str, str]]:
         """Return (zone_entity, zone_auto_switch) tuples for all configured zones."""
-        return [(entity, entity) for entity in self.zone_by_entity]
+        pairs: list[tuple[str, str]] = []
+        for zone_entity in self.zone_by_entity:
+            object_id = zone_entity.split(".", 1)[1]
+            auto_switch = f"switch.{object_id}_automatic_watering"
+            pairs.append((zone_entity, auto_switch))
+        return pairs
 
     async def async_set_runtime_manual_rain_block(self, enabled: bool) -> None:
         """Enable/disable manual rain block and apply switch suspension immediately."""
@@ -508,9 +513,16 @@ class HunterIrrigation:
         await self._async_call_switch_service(entity_id, False)
 
     async def _async_call_switch_service(self, entity_id: str, turn_on: bool) -> None:
-        service = "turn_on" if turn_on else "turn_off"
+        domain = entity_id.split(".", 1)[0]
+        if domain == "valve":
+            service = "open" if turn_on else "close"
+        elif domain == "switch":
+            service = "turn_on" if turn_on else "turn_off"
+        else:
+            service = "open" if turn_on else "close"
+
         await self.hass.services.async_call(
-            "switch",
+            domain,
             service,
             {CONF_ENTITY_ID: entity_id},
             blocking=True,

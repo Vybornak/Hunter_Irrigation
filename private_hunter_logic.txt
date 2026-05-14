@@ -1,0 +1,488 @@
+SOUKROMA POZNAMKA - Hunter Irrigation + Gardena/Hydrawise logika
+Datum: 2026-05-13
+
+Tento soubor je urcen jen pro interni pochopeni provozu. Neni urcen k publikaci.
+
+1) CO DELA TATO VLASTNI INTEGRACE (hunter_irrigation)
+
+Integrace funguje jako nadrizene runtime rizeni zavorovych zon (switch/valve) v Home Assistantu.
+Nejde o plnou nahradu nativniho planovani Gardena/Hydrawise, ale o nadstavbu pro:
+- manualni start/stop zony pres HA sluzby,
+- centralni rain check podminku,
+- preview/simulacni beh,
+- runtime prepis delky zavlahy pro jednotlive zony,
+- jednotne zarizeni + dashboard agregaci.
+
+Klucove sluzby:
+- hunter_irrigation.start_zone
+- hunter_irrigation.stop_zone
+- hunter_irrigation.preview_zone
+
+2) JAK BEZI VNITRNI LOGIKA STARTU ZONY
+
+Pri start_zone integrace:
+1. najde zonu podle zone nebo zone_entity,
+2. urci delku behu v poradi priority:
+   a) hodnota predana ve volani sluzby (duration_min),
+   b) externi duration_entity (pokud je nastavena),
+   c) runtime number entita z integrace,
+   d) staticka duration_min z konfigurace,
+3. vyhodnoti rain blokaci:
+   - daily_rain_sensor >= rain threshold, nebo
+   - instant_rain_sensor > 0, nebo
+   - rain_binary_sensor je ON,
+4. pokud je aktivni manual override, blokace deste se ignoruje,
+5. pokud je zapnuta simulace nebo je volani preview, ventil se fyzicky nespina,
+6. jinak se zona zapne a naplanuje se automaticke vypnuti timerem.
+
+3) CO JE NATIVE GARDENA/HYDRAWISE A CO JE CUSTOM VRSTVA
+
+Nativni Gardena/Hydrawise cast:
+- planovane cykly (next cycle),
+- vlastni programy/kalendar z app,
+- weather/predictive watering trigger uvnitr jejich systemu,
+- auto/manual per-zona prepinace (u Gardena entit).
+
+Custom hunter_irrigation vrstva:
+- HA-side sjednoceni rizeni,
+- vlastni rain guard podminky,
+- sluzby pro automatizace v HA,
+- pomocne statistiky srazek z Recorder historie.
+
+DULEZITE:
+Pokud je v Gardena/Hydrawise aktivni auto planovani a soucasne spoustis custom akce,
+muzes mit paralelni zasahy. Doporučeny provozni model je:
+- varianta A: primarne Gardena planovani + HA jen dohled/override,
+- varianta B: primarne HA automatizace + Gardena auto zony omezit.
+
+4) NOVE RAIN SOUHRNOVE SENZORY (HA)
+
+Integrace vytvari:
+- sensor.hunter_irrigation_rain_yesterday
+- sensor.hunter_irrigation_rain_day_before_yesterday
+- sensor.hunter_irrigation_rain_last_7_days_total
+
+Data se pocitaji z Recorder historie daily_rain_sensor (15min refresh).
+Pro korektni funkci je nutne:
+- mit zapnuty Recorder,
+- mit vyplneny daily_rain_sensor v nastaveni integrace,
+- mit historicka data daneho senzoru.
+
+5) JAK VIDET DALSI PLANOVANOU ZAVLahu V HA
+
+Primo z tvych existujicich entit:
+- sensor.travnik_1_next_cycle
+- sensor.travnik_2_next_cycle
+- sensor.travnik_3_next_cycle
+
+Tyto entity jsou nativni zdroj "co planuje originalni jednotka".
+
+6) JAK ZRUSIT / PREPLANOVAT DALSI CYKLUS
+
+V HA/Gardena mapovani prakticky:
+- rychle pozastaveni auto planu: switch.travnik_X_automatic_watering = OFF,
+- manualni stop aktualniho behu: switch.travnik_X_manual_watering = OFF,
+- jednorazovy manualni start: switch.travnik_X_manual_watering = ON.
+
+Skutecne preplanovani kalendare (casy/dny/typ triggeru) se standardne dela v nativni app
+Gardena/Hydrawise, kde je primarni scheduler.
+
+7) HYDRAWISE - SHRNUTI Z OFICIALNICH PODKLADU
+
+Z dostupnych support stranek vypliva:
+- Hydrawise ma standard i advanced mode planovani,
+- podporuje weather/predictive watering upravy,
+- podporuje suspend/resume watering akce,
+- ma water triggers, sensors, events a API vrstvu.
+
+Pouzite odkazy pro orientaci:
+- https://www.hydrawise.com/
+- https://www.hunterirrigation.com/support/hydrawise
+
+================================================================================
+8) OPERACNI LOGIKA - RAIN-SKIP BEZ FYZICKEHO SENZORU
+================================================================================
+
+PROBLEM:
+Tvoje Hydrawise jednotka nema funkci rain sensor (polameny snem).
+Reseni: Kombinace HA automaci + weather data = virtualni rain guard.
+
+DOSTUPNA DATA:
+┌─────────────────────────────────────────────────────────────────┐
+│ Historicka (Hunter Integration)                                  │
+├─────────────────────────────────────────────────────────────────┤
+│ sensor.hunter_irrigation_rain_yesterday           (mm, vcerejsi) │
+│ sensor.hunter_irrigation_rain_day_before_yesterday(mm)           │
+│ sensor.hunter_irrigation_rain_last_7_days_total   (mm, 7denni)   │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Aktualni (Sencor SWS-12500)                                      │
+├─────────────────────────────────────────────────────────────────┤
+│ sensor.weather_station_sws_12500_denni_uhrn_srazek (dnesni mm)  │
+│ sensor.weather_station_sws_12500_srazky           (aktualni mm/h)│
+│ binary_sensor.vyborny_premyslovice_destovy_senzor (prave pada?) │
+│ sensor.weather_station_sws_12500_venkovni_vlhkost_vzduchu (%)   │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Forecast (HA Weather Integration)                                │
+├─────────────────────────────────────────────────────────────────┤
+│ weather.ipemys5                                    (5 denni)     │
+│ - attributes: forecast[0].precipitation_probability (%)         │
+│ - attributes: forecast[0].precipitation (mm)                    │
+└─────────────────────────────────────────────────────────────────┘
+
+KONZEPTUAL PRISTUP - HYSTEREZNI STROJ:
+
+State NORMAL (zalej):
+  - Předpokládat že půda je suchá
+  - Zalévej v plánech dle Hydrawise/Gardena
+  - Check skip-triggery každých 15 minut
+
+State SKIP (nepřilévej):
+  - Vstup do režimu když je alcune ze skip podmínek splněna
+  - Zůstej v SKIP dokud se stav podstatně nezmění
+  - Hystereze zamezuje oscilaci
+
+─────────────────────────────────────────────────────────────────
+
+SKIP-TRIGGERY (Vstup do SKIP režimu):
+─────────────────────────────────────
+
+Priority 1 - OKAMZITY STOP (fyzicke deste):
+  ✓ binary_sensor.vyborny_premyslovice_destovy_senzor = ON
+  ✓ sensor.weather_station_sws_12500_srazky > 0.5 mm
+
+Priority 2 - VCEREJSI/PREDVCEREJSI SRRAZKY:
+  ✓ sensor.hunter_irrigation_rain_yesterday >= 10 mm
+  ✓ (rain_yesterday >= 2 mm AND rain_day_before_yesterday >= 8 mm)
+
+Priority 3 - 7 DENNI SOUHRNNE SRRAZKY:
+  ✓ sensor.hunter_irrigation_rain_last_7_days_total >= 40 mm
+
+Priority 4 - VYSOKÁ VLHKOST (min evaporace):
+  ✓ sensor.weather_station_sws_12500_venkovni_vlhkost_vzduchu >= 85 %
+
+Priority 5 - FORECAST (destaj se chystá):
+  ✓ weather.ipemys5.attributes.forecast[0-1].precipitation > 5 mm
+    AND precipitation_probability > 70 %
+
+NORMALNY-TRIGGERY (Vystup ze SKIP režimu):
+───────────────────────────────────────────
+
+Vsechny musime splnit soucasne:
+  ✓ sensor.hunter_irrigation_rain_yesterday < 3 mm
+  ✓ sensor.hunter_irrigation_rain_last_7_days_total < 20 mm
+  ✓ sensor.weather_station_sws_12500_venkovni_vlhkost_vzduchu < 65 %
+  ✓ Nejméně 2-3 dny bez fyzických srážek (srazky < 1 mm/den)
+
+THRESHOLD DOPORUCENI:
+────────────────────
+
+Pro tvé údaje (střední plocha, trávník, Česko):
+
+  rain_yesterday_threshold       = 10 mm
+  rain_7day_threshold            = 40 mm
+  humidity_skip_threshold        = 85 %
+  instant_rain_threshold         = 0.5 mm
+  forecast_probability_threshold = 70 %
+  forecast_rainfall_threshold    = 5 mm
+
+Sezónní úpravy:
+  | Sezona  | rain_yesterday | rain_7day | Pozn.                    |
+  |---------|---|---|---|
+  | Léto    | 12 mm | 50 mm | Více vody, méně skip |
+  | Jaro    | 10 mm | 40 mm | Standard            |
+  | Podzim  | 8 mm  | 30 mm | Méně evaporace      |
+  | Zima    | - - | - - | Bez zavlah         |
+
+================================================================================
+9) PRAKTICKE AUTOMACE V HA
+================================================================================
+
+AUTOMATION #1: HYSTEREZE SKIP MODE
+──────────────────────────────────
+
+[Vyžaduje: input_boolean helper - "irrigation_skip_mode"]
+
+alias: "Irrigation: Hysteresis Skip Mode Manager"
+description: "Spravuje stav skip-režimu s hysterezí"
+
+trigger:
+  - platform: time_pattern
+    minutes: "/15"  # Kontrola každých 15 min
+
+action:
+  - choose:
+      # ENTER skip mode
+      - conditions:
+          - or:
+              - condition: numeric_state
+                entity_id: sensor.hunter_irrigation_rain_yesterday
+                above: 10
+              - condition: numeric_state
+                entity_id: sensor.hunter_irrigation_rain_last_7_days_total
+                above: 40
+              - condition: state
+                entity_id: binary_sensor.vyborny_premyslovice_destovy_senzor
+                state: "on"
+              - condition: numeric_state
+                entity_id: sensor.weather_station_sws_12500_venkovni_vlhkost_vzduchu
+                above: 85
+          - condition: state
+            entity_id: input_boolean.irrigation_skip_mode
+            state: "off"
+        sequence:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: input_boolean.irrigation_skip_mode
+          - service: switch.turn_off
+            target:
+              entity_id:
+                - switch.travnik_1_automatic_watering
+                - switch.travnik_2_automatic_watering
+                - switch.travnik_3_automatic_watering
+          - service: logbook.log
+            data:
+              name: "Irrigation Skip Mode"
+              message: "Přechod do SKIP - nedostatek vody potřebné"
+
+      # EXIT skip mode  
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.hunter_irrigation_rain_yesterday
+            below: 3
+          - condition: numeric_state
+            entity_id: sensor.hunter_irrigation_rain_last_7_days_total
+            below: 20
+          - condition: numeric_state
+            entity_id: sensor.weather_station_sws_12500_venkovni_vlhkost_vzduchu
+            below: 65
+          - condition: state
+            entity_id: binary_sensor.vyborny_premyslovice_destovy_senzor
+            state: "off"
+          - condition: state
+            entity_id: input_boolean.irrigation_skip_mode
+            state: "on"
+        sequence:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.irrigation_skip_mode
+          - service: switch.turn_on
+            target:
+              entity_id:
+                - switch.travnik_1_automatic_watering
+                - switch.travnik_2_automatic_watering
+                - switch.travnik_3_automatic_watering
+          - service: logbook.log
+            data:
+              name: "Irrigation Skip Mode"
+              message: "Výstup ze SKIP - normální zavlaha obnovena"
+
+─────────────────────────────────────────────────────────────────
+
+AUTOMATION #2: OKAMZITY STOP - PRAVE PADA
+─────────────────────────────────────────
+
+alias: "Irrigation: Emergency Stop - Raining NOW"
+description: "Okamžitě zastaví všechny zóny když začíná pršet"
+
+trigger:
+  - platform: state
+    entity_id: binary_sensor.vyborny_premyslovice_destovy_senzor
+    to: "on"
+  - platform: numeric_state
+    entity_id: sensor.weather_station_sws_12500_srazky
+    above: 0.5
+
+action:
+  - service: hunter_irrigation.stop_zone
+    data:
+      zone_entity: valve.travnik_1
+  - service: hunter_irrigation.stop_zone
+    data:
+      zone_entity: valve.travnik_2
+  - service: hunter_irrigation.stop_zone
+    data:
+      zone_entity: valve.travnik_3
+  
+  - service: notify.mobile_app_telefon
+    data:
+      title: "🚨 Zalévání zastaveno"
+      message: "Začalo pršet - všechny zóny okamžitě stop"
+
+─────────────────────────────────────────────────────────────────
+
+AUTOMATION #3: MONITORING - LOG VSECH ZMENY
+───────────────────────────────────────────
+
+alias: "Irrigation: Activity Log"
+description: "Zaznamenává všechny změny stavu"
+
+trigger:
+  - platform: state
+    entity_id: input_boolean.irrigation_skip_mode
+  - platform: state
+    entity_id: binary_sensor.travnik_1_watering
+  - platform: state
+    entity_id: binary_sensor.travnik_2_watering
+  - platform: state
+    entity_id: binary_sensor.travnik_3_watering
+  - platform: numeric_state
+    entity_id: sensor.hunter_irrigation_rain_yesterday
+    above: 5
+
+action:
+  - service: logbook.log
+    data:
+      name: "Irrigation"
+      message: |
+        Změna: {{ trigger.entity_id }}
+        Nový stav: {{ trigger.to_state.state }}
+        [Z: {{ trigger.from_state.state }}]
+
+================================================================================
+10) MONITOROVACI DASHBOARD V HA
+================================================================================
+
+Pro lepší viditelnost stavu doporučuju přidat tyto helpery:
+
+input_boolean:
+  irrigation_skip_mode:
+    name: "Režim: Skip (nepřilévej)"
+    icon: mdi:water-off-outline
+  
+  irrigation_manual_pause:
+    name: "Manuální pauza"
+    icon: mdi:pause-circle
+
+input_number:
+  irrigation_rain_threshold_override:
+    name: "Threshold override (mm)"
+    min: 0
+    max: 20
+    unit_of_measurement: "mm"
+    step: 1
+
+Pak si v HA dashboard udělej kartu:
+  type: entities
+  title: "Zavilhavací Status"
+  entities:
+    - input_boolean.irrigation_skip_mode
+    - input_number.hunter_irrigation_rain_threshold
+    - sensor.hunter_irrigation_rain_yesterday
+    - sensor.hunter_irrigation_rain_last_7_days_total
+    - binary_sensor.vyborny_premyslovice_destovy_senzor
+
+================================================================================
+11) CHYBY A RESENI
+================================================================================
+
+CHYBA 1: "Rain stats senzory vrací None"
+────────────────────────────────────────
+Příčiny:
+  ✗ Recorder není zapnutý (Settings > System > Restart nebo check)
+  ✗ Chybí historická data pro daily_rain_sensor
+  ✗ sensor.weather_station_sws_12500_denni_uhrn_srazek neexistuje
+  ✗ Asynchronní timeout v sensor.py
+
+Řešení:
+  1. Zkontroluj existence v Developer > States
+  2. Čekej 15 minut (update interval)
+  3. Restaruj HA
+  4. Zkontroluj logs pro "hunter_irrigation"
+
+CHYBA 2: "Automation se nespustí"
+──────────────────────────────────
+Příčiny:
+  ✗ YAML syntax (indentace!)
+  ✗ entity_id vůbec neexistuje
+  ✗ Conditions tautologie (vždycky false)
+
+Řešení:
+  1. Settings > Automations > Reload YAML
+  2. Klikni "Execute" (ruční test)
+  3. Zkontroluj logs
+  4. Validuj YAML online (yaml-online.com)
+
+CHYBA 3: "Přílišné kmitání skip/normal režimu"
+──────────────────────────────────────────────
+Příčiny:
+  ✗ Příliš napjatá hystereze
+  ✗ Chybí delay/time_pattern trigger
+  ✗ Senzor sám osciluje (jednotka zásadou)
+
+Řešení:
+  1. Zvětši hysterezní pásmo (rozdíl SKIP/NORMAL)
+  2. Přidej: trigger: platform: time_pattern, minutes: "/30"
+  3. Přidej: delay: "00:01:00" v action
+  4. Zkontroluj senzor přímo v jednotce
+
+================================================================================
+12) BEST PRACTICES
+================================================================================
+
+PRAVIDLO 1: Hystereze je klíč
+─────────────────────────────
+Není to: "Zalej pokud < 10 mm, přestaň pokud >= 10 mm"
+Je to:   "Zalej pokud < 3 mm; Přestaň pokud >= 10 mm"
+         → Rozdíl = hystereze = stabilita
+
+PRAVIDLO 2: Kombinuj data zdroje
+──────────────────────────────────
+Nepoužívej single-sensor. Kombinuj:
+  ✓ Historický trend (7 dní)
+  ✓ Aktuální stav (teď)
+  ✓ Forecast (co bude)
+
+PRAVIDLO 3: Testuj s switch.hunter_irrigation_simulate
+────────────────────────────────────────────────────────
+Simuluj bez fyzického rizika - vidíš v logbooku co se stane.
+
+PRAVIDLO 4: Dokumentuj threshold v komentářích
+───────────────────────────────────────────────
+Za měsíc zapomeneš proč je threshold 10 mm a ne 8 mm!
+
+PRAVIDLO 5: Zálohuj nastavení automací
+──────────────────────────────────────
+  1. Settings > Automations > ⋮ > Edit YAML
+  2. Zkopíruj si všechny automace do souboru
+  3. Ulož si v repo jako backup
+
+================================================================================
+13) BUDOUCNOST
+================================================================================
+
+Co dát později:
+  ☐ Machine Learning na historii (1 rok data → predict)
+  ☐ Soil moisture DIY čidlo (Tasmota)
+  ☐ Integraci s SCADA/PLC vlastní
+  ☐ Grafana dashboards s long-term analýzou
+  ☐ Telegram notifikace s grafy
+
+================================================================================
+Poslední aktualizace: 2026-05-13
+Autor: Github Copilot (pro uživatele)
+================================================================================
+- https://www.hunterirrigation.com/support/hydrawise-app
+- https://www.hunterirrigation.com/support/hydrawise-integration-support
+
+8) DOPORUCENE PRAKTICKE NASTAVENI PRO TVUJ PROVOZ
+
+a) Nech v Gardena/Hydrawise hlavni kalendar (protoze uz funguje next_cycle).
+b) V hunter_irrigation nech rain threshold + manual override + simulaci.
+c) V HA automatizaci pouzij hunter_irrigation.start_zone jen pro ad-hoc scenare
+   (napr. "extra zavlaha", "test zony", "servis").
+d) Na dashboard dej vedle sebe:
+   - nativni next_cycle entity,
+   - auto/manual switch z Gardena,
+   - rain threshold + rain souhrny z hunter_irrigation,
+   - aktualni meteo senzory.
+
+9) POZNAMKA K VYDAVANI
+
+Release workflow ted generuje kratsi poznamky bez duplicitniho nadpisu integrace.
+Cilovy tvar prvniho radku release notes:
+[verze] - d.m.rrrr
+

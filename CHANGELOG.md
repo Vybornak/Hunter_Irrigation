@@ -6,6 +6,13 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.30] - 2026-05-14
+
+### Opraveno
+- Vrácena správná implementace `_iter_zone_auto_switches()` pro správné hledání `_automatic_watering` switch.
+- Vrácena správná implementace `_async_call_switch_service()` pro správné rozlišení domain (valve vs switch).
+- Opraveny chyby z 1.0.29 (manuální blokace a spuštění zón).
+
 ## [1.0.29] - 2026-05-14
 
 ### Opraveno
