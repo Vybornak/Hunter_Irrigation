@@ -7,72 +7,96 @@ path: hunter-irrigation
 icon: mdi:sprinkler-variant
 
 badges:
-  - entity: sensor.travnik_1_next_cycle
-    name: Další cyklus Z1
-    icon: mdi:calendar-arrow-right
-  - entity: sensor.travnik_2_next_cycle
-    name: Další cyklus Z2
-    icon: mdi:calendar-arrow-right
-  - entity: sensor.travnik_3_next_cycle
-    name: Další cyklus Z3
-    icon: mdi:calendar-arrow-right
   - entity: sensor.hunter_irrigation_rain_guard_status
     name: Rain Guard
     icon: mdi:shield-check
   - entity: sensor.hunter_irrigation_rain_guard_reason
-    name: Důvod blokace
+    name: Duvod blokace
     icon: mdi:alert-circle-outline
   - entity: switch.hunter_irrigation_manual_override
-    name: Ruční přepsání
+    name: Rucni prepsani
     icon: mdi:hand-back-right
   - entity: switch.hunter_irrigation_simulate
     name: Simulace
     icon: mdi:flask-outline
 
 sections:
+  - type: grid
+    title: Dalsi cykly
+    columns: 4
+    cards:
+      - type: tile
+        entity: sensor.travnik_1_next_cycle
+        name: Dalsi cyklus Z1
+        icon: mdi:calendar-arrow-right
+        color: indigo
+
+      - type: tile
+        entity: sensor.travnik_2_next_cycle
+        name: Dalsi cyklus Z2
+        icon: mdi:calendar-arrow-right
+        color: indigo
+
+      - type: tile
+        entity: sensor.travnik_3_next_cycle
+        name: Dalsi cyklus Z3
+        icon: mdi:calendar-arrow-right
+        color: indigo
+
+      - type: tile
+        entity: sensor.hunter_irrigation_rain_guard_status
+        name: Stav blokace
+        icon: mdi:shield-check
+        color: green
 
   - type: grid
-    title: Zóny
+    title: Zones (Compact)
     columns: 3
     cards:
       - type: entities
-        title: Zóna 1 - Přední trávník
+        title: Zona 1 - Predni travnik
         entities:
           - entity: binary_sensor.travnik_1_watering
-            name: Zalévání
+            name: Zalevani
           - entity: number.hunter_irrigation_zone_1_duration
-            name: Délka (min)
+            name: Delka (min)
+          - entity: sensor.travnik_1_next_cycle
+            name: Dalsi cyklus
           - entity: switch.travnik_1_automatic_watering
-            name: Automatický režim
+            name: Automaticky rezim
           - entity: switch.travnik_1_manual_watering
-            name: Manuální režim
+            name: Manualni rezim
 
       - type: entities
-        title: Zóna 2 - Boční trávník
+        title: Zona 2 - Bocni travnik
         entities:
           - entity: binary_sensor.travnik_2_watering
-            name: Zalévání
+            name: Zalevani
           - entity: number.hunter_irrigation_zone_2_duration
-            name: Délka (min)
+            name: Delka (min)
+          - entity: sensor.travnik_2_next_cycle
+            name: Dalsi cyklus
           - entity: switch.travnik_2_automatic_watering
-            name: Automatický režim
+            name: Automaticky rezim
           - entity: switch.travnik_2_manual_watering
-            name: Manuální režim
+            name: Manualni rezim
 
       - type: entities
-        title: Zóna 3 - Zahrada
+        title: Zona 3 - Zahrada
         entities:
           - entity: binary_sensor.travnik_3_watering
-            name: Zalévání
+            name: Zalevani
           - entity: number.hunter_irrigation_zone_3_duration
-            name: Délka (min)
+            name: Delka (min)
+          - entity: sensor.travnik_3_next_cycle
+            name: Dalsi cyklus
           - entity: switch.travnik_3_automatic_watering
-            name: Automatický režim
+            name: Automaticky rezim
           - entity: switch.travnik_3_manual_watering
-            name: Manuální režim
+            name: Manualni rezim
 
   - type: grid
-    title: Rychlé akce
+    title: Rychle akce
     columns: 3
     cards:
       - type: button
@@ -134,3 +158,37 @@ sections:
           service: hunter_irrigation.stop_zone
           data:
             zone_entity: valve.travnik_3
+
+  - type: grid
+    title: Nastaveni blokace
+    columns: 2
+    cards:
+      - type: entities
+        title: Rezimy
+        entities:
+          - entity: switch.hunter_irrigation_manual_override
+            name: Rucni prepsani
+          - entity: switch.hunter_irrigation_simulate
+            name: Simulace
+          - entity: switch.hunter_irrigation_manual_rain_block
+            name: Rucni blokace deste
+
+      - type: entities
+        title: Limity srazek
+        entities:
+          - entity: number.hunter_irrigation_rain_threshold_24h
+            name: Limit 24h (mm)
+          - entity: number.hunter_irrigation_rain_threshold_48h
+            name: Limit 48h (mm)
+
+      - type: entities
+        title: Srazkove prehledy
+        entities:
+          - entity: sensor.hunter_irrigation_rain_last_24_hours_total
+            name: Srazky 24h
+          - entity: sensor.hunter_irrigation_rain_last_48_hours_total
+            name: Srazky 48h
+          - entity: sensor.hunter_irrigation_rain_yesterday
+            name: Vcera
+          - entity: sensor.hunter_irrigation_rain_last_7_days_total
+            name: 7 dni
