@@ -7,6 +7,7 @@
 - Create the matching git tag for the release version.
 - Push the branch and the tag to `origin`.
 - Create the GitHub Release from the tag using `gh release create` and the changelog notes.
+- Do not force-update an already published release tag; if a published release needs a fix, cut a new patch version instead.
 
 ## GitHub CLI
 - If `gh` is not visible in PATH, use `C:\Program Files\GitHub CLI\gh.exe` directly.

@@ -6,6 +6,14 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.27] - 2026-05-14
+
+### Opraveno
+- Vydaná verze je nyní čistý patch release navázaný na aktuální tag bez přepisování už publikovaného releasu.
+
+### Změněno
+- Release proces je doplněn o pravidlo, že už publikovaný tag se nemá retagovat; při potřebě opravy se má použít nová patch verze.
+
 ## [1.0.26] - 2026-05-14
 
 ### Opraveno
