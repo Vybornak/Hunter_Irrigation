@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from datetime import timedelta
-import inspect
 import logging
 from typing import Any
 
@@ -111,47 +110,31 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
         return round(total, 2)
 
     async def _async_get_history_states(self, start: Any, end: Any) -> list[Any]:
-        """Read recorder history and support both async/sync history APIs."""
-        call_variants = [
-            {
-                "include_start_time_state": True,
-                "significant_changes_only": False,
-                "minimal_response": False,
-                "no_attributes": True,
-            },
-            {
-                "include_start_time_state": True,
-                "significant_changes_only": False,
-                "no_attributes": True,
-            },
-            {
-                "include_start_time_state": True,
-                "significant_changes_only": False,
-            },
-            {},
-        ]
-
-        last_err: Exception | None = None
-        for extra_kwargs in call_variants:
-            try:
-                result = history.get_significant_states(
-                    self.hass,
-                    start,
-                    end,
-                    [self._entity_id],
-                    **extra_kwargs,
-                )
-                if inspect.isawaitable(result):
-                    result = await result
-                if isinstance(result, dict):
-                    return result.get(self._entity_id, [])
-            except TypeError as err:
-                last_err = err
-                continue
-
-        if last_err:
-            raise last_err
-        return []
+        """Read recorder history using proper async API."""
+        try:
+            _LOGGER.debug(f"[RAIN] Querying history: {self._entity_id} from {start} to {end}")
+            
+            # Use async_get_significant_states - proper async API
+            result = await history.async_get_significant_states(
+                self.hass,
+                start_time=start,
+                end_time=end,
+                entity_ids=[self._entity_id],
+                include_start_time_state=True,
+                significant_changes_only=False,
+                no_attributes=True,
+            )
+            
+            if isinstance(result, dict):
+                states = result.get(self._entity_id, [])
+                _LOGGER.debug(f"[RAIN] Got {len(states)} states for {self._entity_id}")
+                return states
+            
+            _LOGGER.warning(f"[RAIN] Unexpected result type: {type(result)}")
+            return []
+        except Exception as err:
+            _LOGGER.warning(f"[RAIN] Failed to query history: {err}")
+            return []
 
     async def _async_update_data(self) -> dict[str, float | None]:
         now = dt_util.now()

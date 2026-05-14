@@ -192,6 +192,8 @@ cards:
             name: Manual override (ignoruj dest)
           - entity: switch.hunter_irrigation_simulate
             name: Simulace (bez fyzickeho otevreni)
+          - entity: input_boolean.hunter_irrigation_manual_rain_block
+            name: 🔒 Blokace srazek (TEST bez srazek)
           - entity: number.hunter_irrigation_rain_threshold
             name: Limit srazek 24 h (mm)
           - entity: number.hunter_irrigation_rain_threshold_48h
