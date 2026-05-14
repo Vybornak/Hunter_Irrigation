@@ -1,0 +1,495 @@
+# Hunter Irrigation - Modern Professional Dashboard
+# For Home Assistant 2026+
+# Paste into Dashboard: Create new view → Raw YAML editor
+
+type: sections
+title: Hunter Irrigation Control
+path: hunter-irrigation
+icon: mdi:sprinkler-variant
+
+sections:
+  # ════════════════════════════════════════════════════════════════════════════
+  # 1. OVERVIEW - Real-time status & key metrics (Hero section)
+  # ════════════════════════════════════════════════════════════════════════════
+  - type: grid
+    title: Status
+    columns: 3
+    cards:
+      # Rain Guard Status - HERO CARD (large, prominent)
+      - type: tile
+        entity: sensor.hunter_irrigation_rain_guard_status
+        icon: mdi:shield-check
+        color: >
+          {% if states('sensor.hunter_irrigation_rain_guard_status') == 'allow' %}
+            green
+          {% else %}
+            red
+          {% endif %}
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace/hunter-irrigation
+
+      # Active Zones Count
+      - type: tile
+        icon: mdi:water-play
+        color: blue
+        features:
+          - type: label
+            label: >
+              {% set z1 = states('binary_sensor.travnik_1_watering') %}
+              {% set z2 = states('binary_sensor.travnik_2_watering') %}
+              {% set z3 = states('binary_sensor.travnik_3_watering') %}
+              {% if z1 == 'on' or z2 == 'on' or z3 == 'on' %}
+                Active: 
+                {%- if z1 == 'on' %} Z1{% endif %}
+                {%- if z2 == 'on' %} Z2{% endif %}
+                {%- if z3 == 'on' %} Z3{% endif %}
+              {% else %}
+                All Idle
+              {% endif %}
+
+      # Last 24h Rain
+      - type: tile
+        entity: sensor.hunter_irrigation_rain_last_24_hours_total
+        icon: mdi:weather-rainy
+        color: cyan
+        features:
+          - type: label
+            label: Last 24h
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 2. ZONE CONTROL - Start/Stop & Status
+  # ════════════════════════════════════════════════════════════════════════════
+  - type: grid
+    title: Zones
+    columns: 3
+    cards:
+      # ZONE 1
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 1 - Přední trávník
+            heading_tag: h3
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: tile
+                entity: binary_sensor.travnik_1_watering
+                icon: mdi:water
+                features:
+                  - type: label
+                    label: Status
+                color: >
+                  {% if states('binary_sensor.travnik_1_watering') == 'on' %}
+                    green
+                  {% else %}
+                    gray
+                  {% endif %}
+
+              - type: tile
+                icon: mdi:timer
+                color: orange
+                features:
+                  - type: label
+                    label: >
+                      Duration: {{ states('number.hunter_irrigation_zone_1_duration', 'min') | default('15') }} min
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: button
+                name: Start Z1
+                icon: mdi:play-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.start_zone
+                  data:
+                    zone_entity: valve.travnik_1
+
+              - type: button
+                name: Stop Z1
+                icon: mdi:stop-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.stop_zone
+                  data:
+                    zone_entity: valve.travnik_1
+
+      # ZONE 2
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 2 - Boční trávník
+            heading_tag: h3
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: tile
+                entity: binary_sensor.travnik_2_watering
+                icon: mdi:water
+                features:
+                  - type: label
+                    label: Status
+                color: >
+                  {% if states('binary_sensor.travnik_2_watering') == 'on' %}
+                    green
+                  {% else %}
+                    gray
+                  {% endif %}
+
+              - type: tile
+                icon: mdi:timer
+                color: orange
+                features:
+                  - type: label
+                    label: >
+                      Duration: {{ states('number.hunter_irrigation_zone_2_duration', 'min') | default('15') }} min
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: button
+                name: Start Z2
+                icon: mdi:play-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.start_zone
+                  data:
+                    zone_entity: valve.travnik_2
+
+              - type: button
+                name: Stop Z2
+                icon: mdi:stop-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.stop_zone
+                  data:
+                    zone_entity: valve.travnik_2
+
+      # ZONE 3
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 3 - Zahrada
+            heading_tag: h3
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: tile
+                entity: binary_sensor.travnik_3_watering
+                icon: mdi:water
+                features:
+                  - type: label
+                    label: Status
+                color: >
+                  {% if states('binary_sensor.travnik_3_watering') == 'on' %}
+                    green
+                  {% else %}
+                    gray
+                  {% endif %}
+
+              - type: tile
+                icon: mdi:timer
+                color: orange
+                features:
+                  - type: label
+                    label: >
+                      Duration: {{ states('number.hunter_irrigation_zone_3_duration', 'min') | default('15') }} min
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: button
+                name: Start Z3
+                icon: mdi:play-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.start_zone
+                  data:
+                    zone_entity: valve.travnik_3
+
+              - type: button
+                name: Stop Z3
+                icon: mdi:stop-circle
+                tap_action:
+                  action: call-service
+                  service: hunter_irrigation.stop_zone
+                  data:
+                    zone_entity: valve.travnik_3
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 3. RAIN STATISTICS - Historical data visualization
+  # ════════════════════════════════════════════════════════════════════════════
+  - type: grid
+    title: Rain Statistics
+    columns: 4
+    cards:
+      - type: tile
+        entity: sensor.hunter_irrigation_rain_last_24_hours_total
+        icon: mdi:water-check
+        color: cyan
+        features:
+          - type: label
+            label: Last 24h
+
+      - type: tile
+        entity: sensor.hunter_irrigation_rain_last_48_hours_total
+        icon: mdi:water-check
+        color: cyan
+        features:
+          - type: label
+            label: Last 48h
+
+      - type: tile
+        entity: sensor.hunter_irrigation_rain_yesterday
+        icon: mdi:calendar-clock
+        color: cyan
+        features:
+          - type: label
+            label: Yesterday
+
+      - type: tile
+        entity: sensor.hunter_irrigation_rain_last_7_days_total
+        icon: mdi:calendar-week
+        color: cyan
+        features:
+          - type: label
+            label: 7 Days
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 4. WATERING SCHEDULE
+  # ════════════════════════════════════════════════════════════════════════════
+  - type: grid
+    title: Watering Schedule
+    columns: 3
+    cards:
+      - type: tile
+        entity: sensor.travnik_1_next_cycle
+        icon: mdi:calendar-arrow-right
+        color: indigo
+        features:
+          - type: label
+            label: Zone 1 Next Cycle
+
+      - type: tile
+        entity: sensor.travnik_2_next_cycle
+        icon: mdi:calendar-arrow-right
+        color: indigo
+        features:
+          - type: label
+            label: Zone 2 Next Cycle
+
+      - type: tile
+        entity: sensor.travnik_3_next_cycle
+        icon: mdi:calendar-arrow-right
+        color: indigo
+        features:
+          - type: label
+            label: Zone 3 Next Cycle
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 5. MODES & OVERRIDES
+  # ════════════════════════════════════════════════════════════════════════════
+  - type: grid
+    title: Mode Controls
+    columns: 3
+    cards:
+      - type: tile
+        entity: switch.hunter_irrigation_manual_override
+        icon: mdi:hand-back-right
+        color: orange
+        features:
+          - type: switch
+
+      - type: tile
+        entity: switch.hunter_irrigation_simulate
+        icon: mdi:eye-off
+        color: orange
+        features:
+          - type: switch
+
+      - type: tile
+        entity: input_boolean.hunter_irrigation_manual_rain_block
+        icon: mdi:cloud-lock
+        color: red
+        features:
+          - type: switch
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 6. RAIN THRESHOLDS - Fine-tuning
+  # ════════════════════════════════════════════════════════════════════════════
+  - type: grid
+    title: Rain Thresholds
+    columns: 2
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: 24h Threshold
+            heading_tag: h4
+
+          - type: tile
+            entity: number.hunter_irrigation_rain_threshold
+            icon: mdi:water-percent
+            color: cyan
+            features:
+              - type: numeric-input
+
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: 48h Threshold
+            heading_tag: h4
+
+          - type: tile
+            entity: number.hunter_irrigation_rain_threshold_48h
+            icon: mdi:water-percent
+            color: cyan
+            features:
+              - type: numeric-input
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 7. DURATION SETTINGS
+  # ════════════════════════════════════════════════════════════════════════════
+  - type: grid
+    title: Watering Duration (minutes)
+    columns: 3
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 1
+            heading_tag: h4
+
+          - type: tile
+            entity: number.hunter_irrigation_zone_1_duration
+            icon: mdi:timer-cog
+            color: gray
+            features:
+              - type: numeric-input
+
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 2
+            heading_tag: h4
+
+          - type: tile
+            entity: number.hunter_irrigation_zone_2_duration
+            icon: mdi:timer-cog
+            color: gray
+            features:
+              - type: numeric-input
+
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 3
+            heading_tag: h4
+
+          - type: tile
+            entity: number.hunter_irrigation_zone_3_duration
+            icon: mdi:timer-cog
+            color: gray
+            features:
+              - type: numeric-input
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 8. ADVANCED - Auto/Manual switches per zone
+  # ════════════════════════════════════════════════════════════════════════════
+  - type: grid
+    title: Zone Modes (Advanced)
+    columns: 3
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 1
+            heading_tag: h4
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: tile
+                entity: switch.travnik_1_automatic_watering
+                icon: mdi:robot
+                color: green
+                features:
+                  - type: switch
+                  - type: label
+                    label: Auto
+
+              - type: tile
+                entity: switch.travnik_1_manual_watering
+                icon: mdi:hand-back-right
+                color: blue
+                features:
+                  - type: switch
+                  - type: label
+                    label: Manual
+
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 2
+            heading_tag: h4
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: tile
+                entity: switch.travnik_2_automatic_watering
+                icon: mdi:robot
+                color: green
+                features:
+                  - type: switch
+                  - type: label
+                    label: Auto
+
+              - type: tile
+                entity: switch.travnik_2_manual_watering
+                icon: mdi:hand-back-right
+                color: blue
+                features:
+                  - type: switch
+                  - type: label
+                    label: Manual
+
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Zone 3
+            heading_tag: h4
+
+          - type: grid
+            columns: 2
+            gap: 8px
+            cards:
+              - type: tile
+                entity: switch.travnik_3_automatic_watering
+                icon: mdi:robot
+                color: green
+                features:
+                  - type: switch
+                  - type: label
+                    label: Auto
+
+              - type: tile
+                entity: switch.travnik_3_manual_watering
+                icon: mdi:hand-back-right
+                color: blue
+                features:
+                  - type: switch
+                  - type: label
+                    label: Manual
