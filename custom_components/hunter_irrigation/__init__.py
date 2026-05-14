@@ -164,17 +164,25 @@ async def _async_migrate_entity_ids(hass: HomeAssistant) -> None:
         "number.hunter_irrigation_prah_srazek_48_h": "number.hunter_irrigation_rain_threshold_48h",
     }
 
+    _LOGGER.info("[SETUP] Starting entity migration...")
     for old_entity_id, new_entity_id in migration_map.items():
         old_entry = registry.async_get(old_entity_id)
         if old_entry is None:
+            _LOGGER.debug(f"[SETUP] {old_entity_id} does not exist, skipping")
             continue
-        if registry.async_get(new_entity_id) is not None:
+        
+        new_entry = registry.async_get(new_entity_id)
+        if new_entry is not None:
+            _LOGGER.info(f"[SETUP] {new_entity_id} already exists, deleting old {old_entity_id}")
+            registry.async_remove(old_entity_id)
             continue
+        
         try:
+            _LOGGER.info(f"[SETUP] Migrating {old_entity_id} → {new_entity_id}")
             registry.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
-            _LOGGER.info("Migrated entity_id from %s to %s", old_entity_id, new_entity_id)
+            _LOGGER.info(f"[SETUP] Successfully migrated {old_entity_id} → {new_entity_id}")
         except ValueError as err:
-            _LOGGER.warning("Failed to migrate entity %s -> %s: %s", old_entity_id, new_entity_id, err)
+            _LOGGER.warning(f"[SETUP] Failed to migrate {old_entity_id} → {new_entity_id}: {err}")
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> bool:

@@ -110,28 +110,26 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
         return round(total, 2)
 
     async def _async_get_history_states(self, start: Any, end: Any) -> list[Any]:
-        """Read recorder history using proper async API."""
+        """Read recorder history using thread executor to avoid blocking."""
         try:
-            _LOGGER.debug(f"[RAIN] Querying history: {self._entity_id} from {start} to {end}")
+            # Use thread executor to avoid blocking the event loop
+            def _get_states() -> list[Any]:
+                result = history.get_significant_states(
+                    self.hass,
+                    start,
+                    end,
+                    [self._entity_id],
+                    include_start_time_state=True,
+                    significant_changes_only=False,
+                    no_attributes=True,
+                )
+                if isinstance(result, dict):
+                    return result.get(self._entity_id, [])
+                return []
             
-            # Use async_get_significant_states - proper async API
-            result = await history.async_get_significant_states(
-                self.hass,
-                start_time=start,
-                end_time=end,
-                entity_ids=[self._entity_id],
-                include_start_time_state=True,
-                significant_changes_only=False,
-                no_attributes=True,
-            )
-            
-            if isinstance(result, dict):
-                states = result.get(self._entity_id, [])
-                _LOGGER.debug(f"[RAIN] Got {len(states)} states for {self._entity_id}")
-                return states
-            
-            _LOGGER.warning(f"[RAIN] Unexpected result type: {type(result)}")
-            return []
+            states = await self.hass.async_add_executor_job(_get_states)
+            _LOGGER.debug(f"[RAIN] Got {len(states)} states from {start} to {end}")
+            return states
         except Exception as err:
             _LOGGER.warning(f"[RAIN] Failed to query history: {err}")
             return []
