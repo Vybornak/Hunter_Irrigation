@@ -508,9 +508,16 @@ class HunterIrrigation:
         await self._async_call_switch_service(entity_id, False)
 
     async def _async_call_switch_service(self, entity_id: str, turn_on: bool) -> None:
-        service = "turn_on" if turn_on else "turn_off"
+        domain = entity_id.split(".", 1)[0]
+        if domain == "valve":
+            service = "open" if turn_on else "close"
+        elif domain == "switch":
+            service = "turn_on" if turn_on else "turn_off"
+        else:
+            service = "open" if turn_on else "close"
+
         await self.hass.services.async_call(
-            "switch",
+            domain,
             service,
             {CONF_ENTITY_ID: entity_id},
             blocking=True,

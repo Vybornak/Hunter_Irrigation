@@ -6,6 +6,11 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.29] - 2026-05-14
+
+### Opraveno
+- Service call pro spuštění/zastavení zón nyní používá `switch` služby namísto neexistujícího `valve.open`.
+
 ## [1.0.28] - 2026-05-14
 
 ### Opraveno
