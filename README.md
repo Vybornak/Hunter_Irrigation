@@ -74,26 +74,70 @@ hunter_irrigation:
     threshold_mm: 2.0
 ```
 
-## Dashboard v Home Assistantu
+## 🎨 Dashboard v Home Assistantu
 
-Ano, může to být rovnou součástí repozitáře. Integrace sama o sobě zatím dashboard automaticky nevytvoří, ale v repozitáři je připravená šablona:
+V repozitáři jsou dostupné 2 varianty dashboardu:
 
-- `examples/dashboard.example.yaml`
+### ✨ **DOPORUČENO: `examples/dashboard_modern.yaml` (Moderní design)**
 
-Postup je jednoduchý:
+Nový, profesionální dashboard s moderním designem (2026+):
 
-1. V Home Assistantu vytvořte novou dashboard záložku.
-2. Zvolte `Raw configuration editor`.
-3. Vložte obsah z `examples/dashboard.example.yaml`.
-4. Upravte hlavně zóny a srážkové senzory podle vašich skutečných `entity_id`.
+**Funkce:**
+- 📊 **Sections layout** - čistá hierarchie a logické seskupení
+- 🎯 **Tile cards** - modern, kompaktní, s barevným kódováním
+- 💚 **Status na top** - Rain Guard stav (zelená=povoleno, červená=blokováno)
+- ⚡ **Quick actions** - Start/Stop tlačítka pro každou zónu
+- 📈 **Rain statistics** - 24h, 48h, yesterday, 7 days
+- ⏱️ **Watering schedule** - Příští zalévání pro každou zónu
+- 🎛️ **Mode controls** - Manual override, simulate, manual rain block
+- 🔧 **Settings section** - Thresholds, durations (spodek)
+- 📱 **Responsive design** - Funguje na mobilu, tabletu i desktopu
 
-Šablona obsahuje:
+**Instalace:**
+1. V Home Assistantu: `Dashboard` → `+ Create new dashboard` → `Create from scratch`
+2. Klikni na `Edit dashboard` (tužka ikona) → `Raw configuration editor`
+3. Smaž výchozí obsah a vlož obsah z `examples/dashboard_modern.yaml`
+4. Klikni `Save`
+5. Vůbec nemusíš nic měnit - všechny entity jsou už v integraci připraveny! ✅
 
-- přehled stavu (manual override, simulace, déšť)
-- ovládání prahu deště
-- ovládání zón (spuštění/zastavení)
-- nastavování délky zálivky
-- diagnostiku srážkových senzorů
+---
+
+### 📋 **Alternativa: `examples/dashboard.example.yaml` (Starší design)**
+
+Původní verze s grid-layout (jednodušší, ale méně profesionální).
+
+---
+
+## Vytváření entity ID
+
+Když integraci spustíš, automaticky se vytvoří tyto entity:
+
+```
+sensor.hunter_irrigation_rain_guard_status          # Stav rain guard (allow/blocked)
+sensor.hunter_irrigation_rain_guard_reason           # Důvod blokace
+sensor.hunter_irrigation_rain_yesterday              # Včera (mm)
+sensor.hunter_irrigation_rain_day_before_yesterday   # Předvčíra (mm)
+sensor.hunter_irrigation_rain_last_7_days_total     # Posledních 7 dní (mm)
+sensor.hunter_irrigation_rain_last_24_hours_total   # Posledních 24h (mm) ⭐
+sensor.hunter_irrigation_rain_last_48_hours_total   # Posledních 48h (mm) ⭐
+sensor.travnik_1_next_cycle                         # Příští zalévání Z1
+sensor.travnik_2_next_cycle                         # Příští zalévání Z2
+sensor.travnik_3_next_cycle                         # Příští zalévání Z3
+
+number.hunter_irrigation_zone_1_duration            # Délka Z1 (min)
+number.hunter_irrigation_zone_2_duration            # Délka Z2 (min)
+number.hunter_irrigation_zone_3_duration            # Délka Z3 (min)
+number.hunter_irrigation_rain_threshold             # Prah 24h (mm)
+number.hunter_irrigation_rain_threshold_48h         # Prah 48h (mm)
+
+switch.hunter_irrigation_manual_override            # Ignoruj déšť
+switch.hunter_irrigation_simulate                   # Bez fyzického otevření
+input_boolean.hunter_irrigation_manual_rain_block   # TEST: Blokuj bez srážek
+```
+
+✨ Všechny entity jsou již připravené k použití - **nemusíš ručně nic vytvářet!**
+
+---
 
 ## Release proces (HACS update + changelog)
 
