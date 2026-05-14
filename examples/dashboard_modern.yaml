@@ -134,38 +134,3 @@ sections:
           service: hunter_irrigation.stop_zone
           data:
             zone_entity: valve.travnik_3
-
-  - type: grid
-    title: Limity srážek
-    columns: 2
-    cards:
-      - type: entities
-        entities:
-          - entity: number.hunter_irrigation_rain_threshold_24h
-            name: Limit 24h (mm)
-          - entity: number.hunter_irrigation_rain_threshold_48h
-            name: Limit 48h (mm)
-
-  - type: grid
-    title: Srážkové přehledy
-    columns: 4
-    cards:
-      - type: tile
-        entity: sensor.hunter_irrigation_rain_last_24_hours_total
-        name: Srážky 24h
-        icon: mdi:water
-
-      - type: tile
-        entity: sensor.hunter_irrigation_rain_last_48_hours_total
-        name: Srážky 48h
-        icon: mdi:water
-
-      - type: tile
-        entity: sensor.hunter_irrigation_rain_yesterday
-        name: Včera
-        icon: mdi:water
-
-      - type: tile
-        entity: sensor.hunter_irrigation_rain_last_7_days_total
-        name: 7 dní
-        icon: mdi:water
