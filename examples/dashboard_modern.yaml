@@ -19,23 +19,36 @@ badges:
   - entity: switch.hunter_irrigation_simulate
     name: Simulace
     icon: mdi:flask-outline
-  - entity: switch.hunter_irrigation_manual_rain_block
-    name: Rucni blokace deste
-    icon: mdi:cloud-lock
-  - entity: sensor.hunter_irrigation_rain_last_24_hours_total
-    name: Srazky 24h
-    icon: mdi:weather-rainy
-  - entity: sensor.hunter_irrigation_rain_last_48_hours_total
-    name: Srazky 48h
-    icon: mdi:weather-rainy
-  - entity: sensor.hunter_irrigation_rain_yesterday
-    name: Vcera
-    icon: mdi:calendar-clock
-  - entity: sensor.hunter_irrigation_rain_last_7_days_total
-    name: 7 dni
-    icon: mdi:calendar-week
 
 sections:
+  - type: grid
+    title: Dalsi cykly
+    columns: 4
+    cards:
+      - type: tile
+        entity: sensor.travnik_1_next_cycle
+        name: Dalsi cyklus Z1
+        icon: mdi:calendar-arrow-right
+        color: indigo
+
+      - type: tile
+        entity: sensor.travnik_2_next_cycle
+        name: Dalsi cyklus Z2
+        icon: mdi:calendar-arrow-right
+        color: indigo
+
+      - type: tile
+        entity: sensor.travnik_3_next_cycle
+        name: Dalsi cyklus Z3
+        icon: mdi:calendar-arrow-right
+        color: indigo
+
+      - type: tile
+        entity: sensor.hunter_irrigation_rain_guard_status
+        name: Stav blokace
+        icon: mdi:shield-check
+        color: green
+
   - type: grid
     title: Zones (Compact)
     columns: 3
@@ -147,34 +160,6 @@ sections:
             zone_entity: valve.travnik_3
 
   - type: grid
-    title: Dalsi informace
-    columns: 4
-    cards:
-      - type: tile
-        entity: sensor.travnik_1_next_cycle
-        name: Dalsi cyklus Z1
-        icon: mdi:calendar-arrow-right
-        color: indigo
-
-      - type: tile
-        entity: sensor.travnik_2_next_cycle
-        name: Dalsi cyklus Z2
-        icon: mdi:calendar-arrow-right
-        color: indigo
-
-      - type: tile
-        entity: sensor.travnik_3_next_cycle
-        name: Dalsi cyklus Z3
-        icon: mdi:calendar-arrow-right
-        color: indigo
-
-      - type: tile
-        entity: sensor.hunter_irrigation_rain_guard_status
-        name: Stav blokace
-        icon: mdi:shield-check
-        color: green
-
-  - type: grid
     title: Nastaveni blokace
     columns: 2
     cards:
@@ -195,3 +180,15 @@ sections:
             name: Limit 24h (mm)
           - entity: number.hunter_irrigation_rain_threshold_48h
             name: Limit 48h (mm)
+
+      - type: entities
+        title: Srazkove prehledy
+        entities:
+          - entity: sensor.hunter_irrigation_rain_last_24_hours_total
+            name: Srazky 24h
+          - entity: sensor.hunter_irrigation_rain_last_48_hours_total
+            name: Srazky 48h
+          - entity: sensor.hunter_irrigation_rain_yesterday
+            name: Vcera
+          - entity: sensor.hunter_irrigation_rain_last_7_days_total
+            name: 7 dni

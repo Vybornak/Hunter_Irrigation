@@ -187,6 +187,7 @@ class HunterIrrigation:
             self.rain_config.get(CONF_RAIN_THRESHOLD_48H, DEFAULT_RAIN_2DAY_THRESHOLD)
         )
         self.active_timers: dict[str, callback] = {}
+        self._manual_rain_block_suspended_switches: set[str] = set()
 
     def set_zone_runtime_duration(self, zone_name: str, duration_min: float) -> None:
         self.zone_runtime_duration[zone_name] = float(duration_min)
@@ -219,7 +220,41 @@ class HunterIrrigation:
             len(zone_pairs),
         )
 
-        service = "turn_off" if enabled else "turn_on"
+        if not enabled:
+            resume_switches = sorted(self._manual_rain_block_suspended_switches)
+            self._manual_rain_block_suspended_switches.clear()
+            if not resume_switches:
+                _LOGGER.info("[MANUAL] No auto switches were suspended by manual rain block")
+                return
+
+            _LOGGER.info(
+                "[MANUAL] Restoring %s auto switches after manual rain block",
+                len(resume_switches),
+            )
+            for auto_switch in resume_switches:
+                state = self.hass.states.get(auto_switch)
+                if state is None:
+                    _LOGGER.warning("[MANUAL] Auto switch %s missing while restoring", auto_switch)
+                    continue
+                if state.state != "off":
+                    _LOGGER.debug(
+                        "[MANUAL] Auto switch %s already on while restoring (state=%s)",
+                        auto_switch,
+                        state.state,
+                    )
+                    continue
+                try:
+                    await self.hass.services.async_call(
+                        "switch",
+                        "turn_on",
+                        {CONF_ENTITY_ID: auto_switch},
+                        blocking=True,
+                    )
+                except Exception as err:
+                    _LOGGER.warning("[MANUAL] Failed to restore %s after manual rain block: %s", auto_switch, err)
+            return
+
+        self._manual_rain_block_suspended_switches.clear()
         for zone_entity, auto_switch in zone_pairs:
             state = self.hass.states.get(auto_switch)
             if state is None:
@@ -237,23 +272,27 @@ class HunterIrrigation:
                 state.state,
             )
             try:
-                await self.hass.services.async_call(
-                    "switch",
-                    service,
-                    {CONF_ENTITY_ID: auto_switch},
-                    blocking=True,
-                )
-                after = self.hass.states.get(auto_switch)
-                _LOGGER.info(
-                    "[MANUAL] Auto switch %s changed to %s",
-                    auto_switch,
-                    after.state if after else "<missing>",
-                )
+                if state.state == "on":
+                    await self.hass.services.async_call(
+                        "switch",
+                        "turn_off",
+                        {CONF_ENTITY_ID: auto_switch},
+                        blocking=True,
+                    )
+                    self._manual_rain_block_suspended_switches.add(auto_switch)
+                    after = self.hass.states.get(auto_switch)
+                    _LOGGER.info(
+                        "[MANUAL] Auto switch %s changed to %s",
+                        auto_switch,
+                        after.state if after else "<missing>",
+                    )
+                else:
+                    _LOGGER.debug(
+                        "[MANUAL] Auto switch %s already off, leaving it unchanged",
+                        auto_switch,
+                    )
             except Exception as err:
                 _LOGGER.warning("[MANUAL] Failed to set %s via manual rain block: %s", auto_switch, err)
-
-            if not enabled:
-                continue
 
             # Enforced manual block: if any configured zone is currently active, stop it now.
             zone_state = self.hass.states.get(zone_entity)
@@ -282,6 +321,11 @@ class HunterIrrigation:
             if cancel := self.active_timers.pop(zone_entity, None):
                 cancel()
                 _LOGGER.info("[MANUAL] Cancelled active timer for zone %s", zone_entity)
+
+        _LOGGER.info(
+            "[MANUAL] Manual rain block applied; suspended switches tracked: %s",
+            len(self._manual_rain_block_suspended_switches),
+        )
 
     def set_runtime_simulate(self, enabled: bool) -> None:
         self.runtime_simulate = enabled

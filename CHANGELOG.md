@@ -6,6 +6,15 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.26] - 2026-05-14
+
+### Opraveno
+- Ruční blokace deště si nyní pamatuje jen ty `switch.<zona>_automatic_watering`, které sama vypnula, a při odblokování vrací zpět pouze je.
+- Po vypnutí ruční blokace se obnoví automatické zavlažování jen u skutečně suspendovaných zón, bez přepisování nezávislých ručních stavů.
+
+### Změněno
+- Dashboard example je zjednodušený: horní badges už neobsahují duplicitní rain statistiky, další cykly jsou přesunuté hned pod badges a srážkové přehledy jsou v samostatné sekci.
+
 ## [1.0.25] - 2026-05-14
 
 ### Opraveno
