@@ -6,6 +6,11 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.32] - 2026-05-14
+
+### Opraveno
+- Opraven duplikovaný text v dashboard příkladě.
+
 ## [1.0.31] - 2026-05-14
 
 ### Změněno

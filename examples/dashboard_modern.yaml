@@ -72,13 +72,7 @@ sections:
             name: Manuální režim
 
   - type: grid
-    title: Rychle akce
-    columns: 3
-    cards:
-      - type: button
-        name: Start Z1
-        icon: mdi:play
-        icon_heié akce
+    title: Rychlé akce
     columns: 3
     cards:
       - type: button
