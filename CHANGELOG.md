@@ -6,6 +6,19 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.21] - 2025-05-14
+
+### Opraveno (KRITICKÉ)
+- **Async blocking call VYŘEŠEN**: Místo `history.async_get_significant_states()` (neexistuje) používáme `hass.async_add_executor_job()` pro sync API
+- Executor běží sync API v thread poolu → event loop není blokován
+- To je standardní Home Assistant pattern
+- Rain stats by měly být dostupné bez warning logů
+
+### Vylepšeno
+- Entity migration: lepší logování s [SETUP] prefixem
+- Delete stará entita když nová existuje (čistší přístup)
+- Oprava mapování `number.hunter_irrigation_prah_srazek_24_h` → EN `rain_threshold`
+
 ## [1.0.20] - 2025-05-14
 
 ### Opraveno (KRITICKÉ)
