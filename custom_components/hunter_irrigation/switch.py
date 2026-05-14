@@ -1,6 +1,8 @@
 """Switch entities for Hunter Irrigation."""
 from __future__ import annotations
 
+import logging
+
 from homeassistant import config_entries
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
@@ -9,6 +11,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import HunterIrrigation
 from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -75,6 +79,7 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
         return self._coordinator.runtime_manual_rain_block
 
     async def async_turn_on(self, **kwargs) -> None:
+        _LOGGER.info("[MANUAL] Switch %s turn_on requested", self.entity_id)
         if self._key == "manual_override":
             self._coordinator.set_runtime_manual_override(True)
         elif self._key == "simulate":
@@ -82,8 +87,10 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
         else:
             await self._coordinator.async_set_runtime_manual_rain_block(True)
         self.async_write_ha_state()
+        _LOGGER.info("[MANUAL] Switch %s new state: %s", self.entity_id, self.is_on)
 
     async def async_turn_off(self, **kwargs) -> None:
+        _LOGGER.info("[MANUAL] Switch %s turn_off requested", self.entity_id)
         if self._key == "manual_override":
             self._coordinator.set_runtime_manual_override(False)
         elif self._key == "simulate":
@@ -91,3 +98,4 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
         else:
             await self._coordinator.async_set_runtime_manual_rain_block(False)
         self.async_write_ha_state()
+        _LOGGER.info("[MANUAL] Switch %s new state: %s", self.entity_id, self.is_on)

@@ -6,6 +6,22 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.25] - 2026-05-14
+
+### Opraveno
+- Ruční blokace deště nyní při zapnutí okamžitě aplikuje blokaci do praxe:
+	- vypne `switch.<zona>_automatic_watering` pro všechny zóny,
+	- pokud už zóna běží, ihned ji zastaví,
+	- zruší aktivní runtime timer dané zóny.
+
+### Přidáno
+- Detailní diagnostické logování pro ruční blokaci deště (`[MANUAL]`):
+	- požadavek na zapnutí/vypnutí switch entity,
+	- seznam cílových auto switchů,
+	- stav auto switchů před/po service call,
+	- varování, pokud cílový auto switch neexistuje,
+	- logování okamžitého zastavení běžící zóny.
+
 ## [1.0.24] - 2026-05-14
 
 ### Opraveno

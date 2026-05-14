@@ -197,18 +197,45 @@ class HunterIrrigation:
     def set_runtime_manual_rain_block(self, enabled: bool) -> None:
         """Enable/disable manual rain block for testing without real rainfall."""
         self.runtime_manual_rain_block = enabled
-        _LOGGER.info(f"[MANUAL] Manual rain block set to {enabled}")
+        _LOGGER.info("[MANUAL] Manual rain block runtime flag set to: %s", enabled)
+
+    def _iter_zone_auto_switches(self) -> list[tuple[str, str]]:
+        """Return (zone_entity, zone_auto_switch) tuples for all configured zones."""
+        pairs: list[tuple[str, str]] = []
+        for zone_entity in self.zone_by_entity:
+            object_id = zone_entity.split(".", 1)[1]
+            auto_switch = f"switch.{object_id}_automatic_watering"
+            pairs.append((zone_entity, auto_switch))
+        return pairs
 
     async def async_set_runtime_manual_rain_block(self, enabled: bool) -> None:
         """Enable/disable manual rain block and apply switch suspension immediately."""
         self.set_runtime_manual_rain_block(enabled)
+
+        zone_pairs = self._iter_zone_auto_switches()
+        _LOGGER.info(
+            "[MANUAL] Applying manual rain block=%s for %s zones",
+            enabled,
+            len(zone_pairs),
+        )
+
         service = "turn_off" if enabled else "turn_on"
-        for entity_id in self.zone_by_entity:
-            object_id = entity_id.split(".", 1)[1]
-            auto_switch = f"switch.{object_id}_automatic_watering"
+        for zone_entity, auto_switch in zone_pairs:
             state = self.hass.states.get(auto_switch)
             if state is None:
+                _LOGGER.warning(
+                    "[MANUAL] Auto switch %s not found for zone %s",
+                    auto_switch,
+                    zone_entity,
+                )
                 continue
+
+            _LOGGER.info(
+                "[MANUAL] %s auto switch %s (current=%s)",
+                "Disabling" if enabled else "Enabling",
+                auto_switch,
+                state.state,
+            )
             try:
                 await self.hass.services.async_call(
                     "switch",
@@ -216,8 +243,45 @@ class HunterIrrigation:
                     {CONF_ENTITY_ID: auto_switch},
                     blocking=True,
                 )
+                after = self.hass.states.get(auto_switch)
+                _LOGGER.info(
+                    "[MANUAL] Auto switch %s changed to %s",
+                    auto_switch,
+                    after.state if after else "<missing>",
+                )
             except Exception as err:
                 _LOGGER.warning("[MANUAL] Failed to set %s via manual rain block: %s", auto_switch, err)
+
+            if not enabled:
+                continue
+
+            # Enforced manual block: if any configured zone is currently active, stop it now.
+            zone_state = self.hass.states.get(zone_entity)
+            zone_domain = zone_entity.split(".", 1)[0]
+            zone_active = bool(
+                zone_state
+                and (
+                    (zone_domain == "switch" and zone_state.state == "on")
+                    or (zone_domain == "valve" and zone_state.state == "open")
+                )
+            )
+            if not zone_active:
+                _LOGGER.debug(
+                    "[MANUAL] Zone %s is not active (state=%s)",
+                    zone_entity,
+                    zone_state.state if zone_state else "<missing>",
+                )
+                continue
+
+            _LOGGER.info("[MANUAL] Zone %s is active, stopping due to manual rain block", zone_entity)
+            try:
+                await self._async_call_switch_service(zone_entity, False)
+            except Exception as err:
+                _LOGGER.warning("[MANUAL] Failed to stop active zone %s: %s", zone_entity, err)
+
+            if cancel := self.active_timers.pop(zone_entity, None):
+                cancel()
+                _LOGGER.info("[MANUAL] Cancelled active timer for zone %s", zone_entity)
 
     def set_runtime_simulate(self, enabled: bool) -> None:
         self.runtime_simulate = enabled
