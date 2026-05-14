@@ -76,7 +76,7 @@ PLATFORMS = ["number", "sensor", "switch"]
 
 async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEntry) -> bool:
     config = {**entry.data, **entry.options}
-    coordinator = HunterIrrigation(hass, config)
+    coordinator = HunterIrrigation(hass, config, entry.entry_id)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"coordinator": coordinator}
 
     # Migrate entity IDs first (before platform setup)
@@ -162,8 +162,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: config_entries.ConfigEn
 
 
 class HunterIrrigation:
-    def __init__(self, hass: HomeAssistant, config: dict[str, Any]) -> None:
+    def __init__(self, hass: HomeAssistant, config: dict[str, Any], entry_id: str) -> None:
         self.hass = hass
+        self._entry_id = entry_id
         self.zone_by_name: dict[str, dict[str, Any]] = {}
         self.zone_by_entity: dict[str, dict[str, Any]] = {}
         self.zone_runtime_duration: dict[str, float] = {}
@@ -198,14 +199,52 @@ class HunterIrrigation:
         self.runtime_manual_rain_block = enabled
         _LOGGER.info(f"[MANUAL] Manual rain block set to {enabled}")
 
+    async def async_set_runtime_manual_rain_block(self, enabled: bool) -> None:
+        """Enable/disable manual rain block and apply switch suspension immediately."""
+        self.set_runtime_manual_rain_block(enabled)
+        service = "turn_off" if enabled else "turn_on"
+        for entity_id in self.zone_by_entity:
+            object_id = entity_id.split(".", 1)[1]
+            auto_switch = f"switch.{object_id}_automatic_watering"
+            state = self.hass.states.get(auto_switch)
+            if state is None:
+                continue
+            try:
+                await self.hass.services.async_call(
+                    "switch",
+                    service,
+                    {CONF_ENTITY_ID: auto_switch},
+                    blocking=True,
+                )
+            except Exception as err:
+                _LOGGER.warning("[MANUAL] Failed to set %s via manual rain block: %s", auto_switch, err)
+
     def set_runtime_simulate(self, enabled: bool) -> None:
         self.runtime_simulate = enabled
 
-    def set_runtime_rain_threshold(self, threshold_mm: float) -> None:
-        self.runtime_rain_threshold = float(threshold_mm)
+    async def _async_persist_rain_thresholds(self) -> None:
+        """Persist runtime thresholds into config entry options so they survive restart."""
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        if entry is None:
+            _LOGGER.warning("[SETUP] Cannot persist thresholds, missing config entry %s", self._entry_id)
+            return
 
-    def set_runtime_rain_threshold_48h(self, threshold_mm: float) -> None:
+        merged = {**entry.data, **entry.options}
+        rain = dict(merged.get(CONF_RAIN, {}))
+        rain[CONF_RAIN_THRESHOLD] = float(self.runtime_rain_threshold)
+        rain[CONF_RAIN_THRESHOLD_48H] = float(self.runtime_rain_threshold_48h)
+
+        new_options = dict(entry.options)
+        new_options[CONF_RAIN] = rain
+        self.hass.config_entries.async_update_entry(entry, options=new_options)
+
+    async def async_set_runtime_rain_threshold(self, threshold_mm: float) -> None:
+        self.runtime_rain_threshold = float(threshold_mm)
+        await self._async_persist_rain_thresholds()
+
+    async def async_set_runtime_rain_threshold_48h(self, threshold_mm: float) -> None:
         self.runtime_rain_threshold_48h = float(threshold_mm)
+        await self._async_persist_rain_thresholds()
 
     def _get_zone_config(
         self, zone_name: str | None, entity_id: str | None

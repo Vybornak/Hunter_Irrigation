@@ -6,6 +6,15 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.24] - 2026-05-14
+
+### Opraveno
+- Hodnoty `number.hunter_irrigation_rain_threshold_24h` a `number.hunter_irrigation_rain_threshold_48h` se nyní perzistentně ukládají do options config entry, takže po restartu zůstávají zachovány.
+- `switch.hunter_irrigation_manual_rain_block` nyní okamžitě aplikuje blokaci v praxi: při zapnutí vypne auto zavlažování zón, při vypnutí ho opět zapne.
+
+### Změněno
+- Number entity settery pro thresholdy používají asynchronní persistenci runtime hodnot.
+
 ## [1.0.23] - 2026-05-14
 
 ### Opraveno

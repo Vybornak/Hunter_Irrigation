@@ -80,7 +80,7 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
         elif self._key == "simulate":
             self._coordinator.set_runtime_simulate(True)
         else:
-            self._coordinator.set_runtime_manual_rain_block(True)
+            await self._coordinator.async_set_runtime_manual_rain_block(True)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -89,5 +89,5 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
         elif self._key == "simulate":
             self._coordinator.set_runtime_simulate(False)
         else:
-            self._coordinator.set_runtime_manual_rain_block(False)
+            await self._coordinator.async_set_runtime_manual_rain_block(False)
         self.async_write_ha_state()

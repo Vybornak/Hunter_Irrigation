@@ -92,7 +92,7 @@ class HunterRainThreshold24hNumber(HunterBaseNumberEntity):
         return self._coordinator.runtime_rain_threshold
 
     async def async_set_native_value(self, value: float) -> None:
-        self._coordinator.set_runtime_rain_threshold(float(value))
+        await self._coordinator.async_set_runtime_rain_threshold(float(value))
         self.async_write_ha_state()
 
 
@@ -117,5 +117,5 @@ class HunterRainThreshold48hNumber(HunterBaseNumberEntity):
         return self._coordinator.runtime_rain_threshold_48h
 
     async def async_set_native_value(self, value: float) -> None:
-        self._coordinator.set_runtime_rain_threshold_48h(float(value))
+        await self._coordinator.async_set_runtime_rain_threshold_48h(float(value))
         self.async_write_ha_state()
