@@ -6,6 +6,11 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.28] - 2026-05-14
+
+### Opraveno
+- Chyba v entity_id konstrukci u manuální blokace deště: entity se správně vrací bez zdvojení sufixu `_automatic_watering`.
+
 ## [1.0.27] - 2026-05-14
 
 ### Opraveno

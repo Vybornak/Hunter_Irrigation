@@ -202,12 +202,7 @@ class HunterIrrigation:
 
     def _iter_zone_auto_switches(self) -> list[tuple[str, str]]:
         """Return (zone_entity, zone_auto_switch) tuples for all configured zones."""
-        pairs: list[tuple[str, str]] = []
-        for zone_entity in self.zone_by_entity:
-            object_id = zone_entity.split(".", 1)[1]
-            auto_switch = f"switch.{object_id}_automatic_watering"
-            pairs.append((zone_entity, auto_switch))
-        return pairs
+        return [(entity, entity) for entity in self.zone_by_entity]
 
     async def async_set_runtime_manual_rain_block(self, enabled: bool) -> None:
         """Enable/disable manual rain block and apply switch suspension immediately."""
