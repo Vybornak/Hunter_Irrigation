@@ -41,11 +41,19 @@ async def async_setup_entry(
     rain = config.get("rain", {})
     daily_rain_sensor = rain.get(CONF_DAILY_RAIN_SENSOR)
     if not daily_rain_sensor:
+        _LOGGER.warning("[RAIN] No daily_rain_sensor configured, skipping rain stats")
         async_add_entities(entities)
         return
 
+    _LOGGER.info(f"[RAIN] Setting up coordinator for sensor: {daily_rain_sensor}")
     coordinator = HunterRainStatsCoordinator(hass, daily_rain_sensor)
-    await coordinator.async_config_entry_first_refresh()
+    
+    _LOGGER.info("[RAIN] Calling first_refresh to load data immediately...")
+    try:
+        await coordinator.async_config_entry_first_refresh()
+        _LOGGER.info(f"[RAIN] First refresh complete. Data: {coordinator.data}")
+    except Exception as err:
+        _LOGGER.error(f"[RAIN] First refresh FAILED: {err}", exc_info=True)
 
     entities.extend(
         [
@@ -67,9 +75,10 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
             hass,
             _LOGGER,
             name="hunter_irrigation_rain_stats",
-            update_interval=timedelta(minutes=15),
+            update_interval=timedelta(minutes=1),
         )
         self._entity_id = entity_id
+        _LOGGER.info(f"[RAIN] Coordinator initialized for {entity_id}")
 
     def _sum_cumulative_states(self, states: list[Any]) -> float | None:
         if not states:
@@ -151,29 +160,50 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
         start_48h = now - timedelta(hours=48)
         start_24h = now - timedelta(hours=24)
 
+        _LOGGER.info(f"[RAIN] ==== UPDATE START ====")
+        _LOGGER.info(f"[RAIN] Entity: {self._entity_id}, Now: {now}")
+        _LOGGER.info(f"[RAIN] Query ranges: week({week_start} → {today_start}), 24h({start_24h}), 48h({start_48h})")
+
         try:
             start_utc = dt_util.as_utc(week_start)
             end_utc = dt_util.as_utc(today_start)
 
             states = await self._async_get_history_states(start_utc, end_utc)
+            _LOGGER.debug(f"[RAIN] Week states count: {len(states)}")
+            if states:
+                _LOGGER.debug(f"[RAIN]   First: {states[0].state} @ {states[0].last_updated}")
+                _LOGGER.debug(f"[RAIN]   Last:  {states[-1].state} @ {states[-1].last_updated}")
+            
             states_24h = await self._async_get_history_states(
                 dt_util.as_utc(start_24h), dt_util.as_utc(now)
             )
+            _LOGGER.debug(f"[RAIN] 24h states count: {len(states_24h)}")
+            if states_24h:
+                _LOGGER.debug(f"[RAIN]   First: {states_24h[0].state} @ {states_24h[0].last_updated}")
+                _LOGGER.debug(f"[RAIN]   Last:  {states_24h[-1].state} @ {states_24h[-1].last_updated}")
+            
             states_48h = await self._async_get_history_states(
                 dt_util.as_utc(start_48h), dt_util.as_utc(now)
             )
+            _LOGGER.debug(f"[RAIN] 48h states count: {len(states_48h)}")
+            if states_48h:
+                _LOGGER.debug(f"[RAIN]   First: {states_48h[0].state} @ {states_48h[0].last_updated}")
+                _LOGGER.debug(f"[RAIN]   Last:  {states_48h[-1].state} @ {states_48h[-1].last_updated}")
 
             daily_max: dict[Any, float] = {}
             for state in states:
                 try:
                     value = float(state.state)
                 except (TypeError, ValueError):
+                    _LOGGER.debug(f"[RAIN] Skipping invalid state: {state.state}")
                     continue
 
                 local_date = dt_util.as_local(state.last_updated).date()
                 previous = daily_max.get(local_date)
                 if previous is None or value > previous:
                     daily_max[local_date] = value
+
+            _LOGGER.debug(f"[RAIN] Daily max values: {daily_max}")
 
             yesterday_date = (today_start - timedelta(days=1)).date()
             day_before_date = (today_start - timedelta(days=2)).date()
@@ -183,15 +213,22 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
                 d = (today_start - timedelta(days=days_back)).date()
                 last_7_days_total += float(daily_max.get(d, 0.0))
 
-            return {
+            rain_24h = self._sum_cumulative_states(states_24h)
+            rain_48h = self._sum_cumulative_states(states_48h)
+
+            result = {
                 "rain_yesterday": float(daily_max.get(yesterday_date, 0.0)),
                 "rain_day_before_yesterday": float(daily_max.get(day_before_date, 0.0)),
                 "rain_last_7_days_total": round(last_7_days_total, 2),
-                "rain_last_24_hours_total": self._sum_cumulative_states(states_24h),
-                "rain_last_48_hours_total": self._sum_cumulative_states(states_48h),
+                "rain_last_24_hours_total": rain_24h,
+                "rain_last_48_hours_total": rain_48h,
             }
+            _LOGGER.info(f"[RAIN] RESULT: {result}")
+            _LOGGER.info(f"[RAIN] ==== UPDATE END (SUCCESS) ====")
+            return result
         except Exception as err:  # pragma: no cover
-            _LOGGER.warning("Failed to calculate rain stats: %s", err)
+            _LOGGER.error(f"[RAIN] ==== UPDATE END (FAILED) ====", exc_info=True)
+            _LOGGER.error(f"[RAIN] Exception: {err}")
             return {
                 "rain_yesterday": None,
                 "rain_day_before_yesterday": None,

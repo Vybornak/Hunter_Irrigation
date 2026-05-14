@@ -7,8 +7,8 @@ from typing import Any
 from homeassistant import config_entries
 import voluptuous as vol
 
-from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
-from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.const import CONF_ENTITY_ID, CONF_NAME, EVENT_STATE_CHANGED
+from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
@@ -79,6 +79,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     coordinator = HunterIrrigation(hass, config)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"coordinator": coordinator}
 
+    # Migrate entity IDs first (before platform setup)
+    await _async_migrate_entity_ids(hass)
+    _LOGGER.info("[SETUP] Entity migration completed")
+
+    # Create manual rain block helper if not exists
+    helper_entity_id = "input_boolean.hunter_irrigation_manual_rain_block"
+    if not hass.states.get(helper_entity_id):
+        _LOGGER.info(f"[SETUP] Creating {helper_entity_id}")
+        try:
+            await hass.services.async_call(
+                "input_boolean",
+                "create",
+                {
+                    "name": "Hunter Irrigation - Manual Rain Block (Testing)",
+                    "entity_id": helper_entity_id,
+                    "icon": "mdi:cloud-lock",
+                },
+                blocking=True,
+            )
+            _LOGGER.info(f"[SETUP] Helper {helper_entity_id} created")
+        except Exception as err:
+            _LOGGER.warning(f"[SETUP] Failed to create helper: {err}")
+    else:
+        _LOGGER.info(f"[SETUP] Helper {helper_entity_id} already exists")
+
+    # Register services
     hass.services.async_register(
         DOMAIN,
         SERVICE_START_ZONE,
@@ -102,8 +128,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     entry.async_on_unload(unsub)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
+    # Listen for manual rain block state changes
+    @callback
+    def _manual_rain_block_listener(event: Event) -> None:
+        entity_id = event.data.get("entity_id")
+        if entity_id == helper_entity_id:
+            new_state = event.data.get("new_state")
+            if new_state:
+                is_on = new_state.state == "on"
+                coordinator.set_runtime_manual_rain_block(is_on)
+                _LOGGER.info(f"[MANUAL] Manual rain block state changed: {is_on}")
+
+    unsub_manual_block = hass.bus.async_listen(EVENT_STATE_CHANGED, _manual_rain_block_listener)
+    entry.async_on_unload(unsub_manual_block)
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    await _async_migrate_entity_ids(hass)
 
     _LOGGER.info("Hunter Irrigation initialized with %s zones", len(coordinator.zone_by_name))
     return True
@@ -165,6 +204,7 @@ class HunterIrrigation:
         self.simulate_entity = config.get(CONF_SIMULATE_ENTITY)
         self.runtime_manual_override = False
         self.runtime_simulate = False
+        self.runtime_manual_rain_block = False
         self.runtime_rain_threshold = float(
             self.rain_config.get(CONF_RAIN_THRESHOLD, DEFAULT_RAIN_THRESHOLD)
         )
@@ -178,6 +218,11 @@ class HunterIrrigation:
 
     def set_runtime_manual_override(self, enabled: bool) -> None:
         self.runtime_manual_override = enabled
+
+    def set_runtime_manual_rain_block(self, enabled: bool) -> None:
+        """Enable/disable manual rain block for testing without real rainfall."""
+        self.runtime_manual_rain_block = enabled
+        _LOGGER.info(f"[MANUAL] Manual rain block set to {enabled}")
 
     def set_runtime_simulate(self, enabled: bool) -> None:
         self.runtime_simulate = enabled
@@ -260,6 +305,21 @@ class HunterIrrigation:
         return self.hass.states.is_state(self.simulate_entity, "on")
 
     def _is_rain_blocked(self) -> tuple[bool, dict[str, Any]]:
+        # Check manual rain block first (for testing)
+        if self.runtime_manual_rain_block:
+            _LOGGER.info("[MANUAL] Manual rain block is ACTIVE (testing mode)")
+            return True, {
+                "rain_last_24h": None,
+                "rain_last_48h": None,
+                "daily_rain": None,
+                "instant_rain": None,
+                "rain_binary": None,
+                "rain_threshold_24h": None,
+                "rain_threshold_48h": None,
+                "rain_threshold_entity": None,
+                "rain_block_reason": "manual_rain_block",
+            }
+        
         rain_last_24h = self._read_float_sensor(SENSOR_RAIN_LAST_24H)
         rain_last_48h = self._read_float_sensor(SENSOR_RAIN_LAST_48H)
         daily = self._read_float_sensor(self.rain_config.get(CONF_DAILY_RAIN_SENSOR))
@@ -386,10 +446,25 @@ class HunterIrrigation:
 
         if blocked and not skip_rain_check and not manual_override:
             _LOGGER.info(
-                "Hunter Irrigation blocked by rain for %s: %s",
+                "[BLOCK] Hunter Irrigation blocked by rain for %s: %s",
                 entity_id,
-                rain_state,
+                rain_state.get("rain_block_reason"),
             )
+            # Suspend automatic watering on the valve
+            device_name = entity_id.split(".")[1]
+            auto_switch = f"switch.{device_name}_automatic_watering"
+            _LOGGER.info(f"[BLOCK] Suspending auto plan: {auto_switch}")
+            try:
+                await self.hass.services.async_call(
+                    "switch",
+                    "turn_off",
+                    {CONF_ENTITY_ID: auto_switch},
+                    blocking=True,
+                )
+                _LOGGER.info(f"[BLOCK] Auto switch suspended: {auto_switch}")
+            except Exception as err:
+                _LOGGER.warning(f"[BLOCK] Failed to suspend auto switch {auto_switch}: {err}")
+            
             self._fire_result_event(
                 zone_name,
                 entity_id,
@@ -423,6 +498,24 @@ class HunterIrrigation:
                 rain_state,
             )
             return
+
+        # Check if we need to resume automatic watering
+        if not blocked:
+            device_name = entity_id.split(".")[1]
+            auto_switch = f"switch.{device_name}_automatic_watering"
+            state = self.hass.states.get(auto_switch)
+            if state and state.state == "off":
+                _LOGGER.info(f"[UNBLOCK] Resuming auto plan: {auto_switch}")
+                try:
+                    await self.hass.services.async_call(
+                        "switch",
+                        "turn_on",
+                        {CONF_ENTITY_ID: auto_switch},
+                        blocking=True,
+                    )
+                    _LOGGER.info(f"[UNBLOCK] Auto switch resumed: {auto_switch}")
+                except Exception as err:
+                    _LOGGER.warning(f"[UNBLOCK] Failed to resume auto switch {auto_switch}: {err}")
 
         await self._async_call_switch_service(entity_id, True)
         self._schedule_zone_close(entity_id, duration_min)
