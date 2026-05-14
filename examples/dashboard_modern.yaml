@@ -317,12 +317,15 @@ sections:
         features:
           - type: switch
 
-      - type: tile
-        entity: input_boolean.hunter_irrigation_manual_rain_block
-        icon: mdi:cloud-lock
-        color: red
-        features:
-          - type: switch
+      # NOTE: Manual rain block (input_boolean.hunter_irrigation_manual_rain_block)
+      # will be auto-created by the integration after first reload
+      # For now, use this as a placeholder - uncomment after integration creates it
+      # - type: tile
+      #   entity: input_boolean.hunter_irrigation_manual_rain_block
+      #   icon: mdi:cloud-lock
+      #   color: red
+      #   features:
+      #     - type: switch
 
   # ════════════════════════════════════════════════════════════════════════════
   # 6. RAIN THRESHOLDS - Fine-tuning
@@ -338,7 +341,7 @@ sections:
             heading_tag: h4
 
           - type: tile
-            entity: number.hunter_irrigation_rain_threshold
+            entity: number.hunter_irrigation_prah_srazek_24_h
             icon: mdi:water-percent
             color: cyan
             features:
