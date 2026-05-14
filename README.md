@@ -41,9 +41,11 @@ Po načtení integrace se vytvoří entity, které můžeš hned použít v dash
 - `number.hunter_irrigation_zone_1_duration`
 - `number.hunter_irrigation_zone_2_duration`
 - `number.hunter_irrigation_zone_3_duration`
-- `number.hunter_irrigation_rain_threshold`
+- `number.hunter_irrigation_rain_threshold_24h`
+- `number.hunter_irrigation_rain_threshold_48h`
 - `switch.hunter_irrigation_manual_override`
-- `switch.hunter_irrigation_simulation`
+- `switch.hunter_irrigation_simulate`
+- `switch.hunter_irrigation_manual_rain_block`
 
 Ruční helpery tedy nejsou povinné.
 
@@ -127,12 +129,12 @@ sensor.travnik_3_next_cycle                         # Příští zalévání Z3
 number.hunter_irrigation_zone_1_duration            # Délka Z1 (min)
 number.hunter_irrigation_zone_2_duration            # Délka Z2 (min)
 number.hunter_irrigation_zone_3_duration            # Délka Z3 (min)
-number.hunter_irrigation_rain_threshold             # Prah 24h (mm)
+number.hunter_irrigation_rain_threshold_24h         # Prah 24h (mm)
 number.hunter_irrigation_rain_threshold_48h         # Prah 48h (mm)
 
 switch.hunter_irrigation_manual_override            # Ignoruj déšť
 switch.hunter_irrigation_simulate                   # Bez fyzického otevření
-input_boolean.hunter_irrigation_manual_rain_block   # TEST: Blokuj bez srážek
+switch.hunter_irrigation_manual_rain_block          # TEST: Blokuj bez srážek
 ```
 
 ✨ Všechny entity jsou již připravené k použití - **nemusíš ručně nic vytvářet!**

@@ -69,6 +69,9 @@
       },
       "simulate": {
         "name": "Simulace"
+      },
+      "manual_rain_block": {
+        "name": "Ruční blokace deště"
       }
     },
     "number": {

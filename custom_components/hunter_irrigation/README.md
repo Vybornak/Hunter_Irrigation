@@ -50,9 +50,11 @@ Pokud helpery nenastavíte, integrace použije vestavěné entity:
 - `number.hunter_irrigation_zone_1_duration`
 - `number.hunter_irrigation_zone_2_duration`
 - `number.hunter_irrigation_zone_3_duration`
-- `number.hunter_irrigation_rain_threshold`
+- `number.hunter_irrigation_rain_threshold_24h`
+- `number.hunter_irrigation_rain_threshold_48h`
 - `switch.hunter_irrigation_manual_override`
-- `switch.hunter_irrigation_simulation`
+- `switch.hunter_irrigation_simulate`
+- `switch.hunter_irrigation_manual_rain_block`
 
 ## Doporučené externí helpery (volitelné)
 

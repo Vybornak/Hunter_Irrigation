@@ -85,7 +85,7 @@ class HunterRainThreshold24hNumber(HunterBaseNumberEntity):
         self._coordinator = coordinator
         self._attr_unique_id = "hunter_irrigation_rain_threshold_24h_mm"
         self._attr_translation_key = "rain_threshold_24h"
-        self._attr_entity_id = "number.hunter_irrigation_rain_threshold"
+        self._attr_entity_id = "number.hunter_irrigation_rain_threshold_24h"
 
     @property
     def native_value(self) -> float:

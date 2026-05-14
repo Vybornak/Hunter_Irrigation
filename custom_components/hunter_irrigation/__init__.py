@@ -7,8 +7,8 @@ from typing import Any
 from homeassistant import config_entries
 import voluptuous as vol
 
-from homeassistant.const import CONF_ENTITY_ID, CONF_NAME, EVENT_STATE_CHANGED
-from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
+from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
+from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
@@ -83,27 +83,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     await _async_migrate_entity_ids(hass)
     _LOGGER.info("[SETUP] Entity migration completed")
 
-    # Create manual rain block helper if not exists
-    helper_entity_id = "input_boolean.hunter_irrigation_manual_rain_block"
-    if not hass.states.get(helper_entity_id):
-        _LOGGER.info(f"[SETUP] Creating {helper_entity_id}")
-        try:
-            await hass.services.async_call(
-                "input_boolean",
-                "create",
-                {
-                    "name": "Hunter Irrigation - Manual Rain Block (Testing)",
-                    "entity_id": helper_entity_id,
-                    "icon": "mdi:cloud-lock",
-                },
-                blocking=True,
-            )
-            _LOGGER.info(f"[SETUP] Helper {helper_entity_id} created")
-        except Exception as err:
-            _LOGGER.warning(f"[SETUP] Failed to create helper: {err}")
-    else:
-        _LOGGER.info(f"[SETUP] Helper {helper_entity_id} already exists")
-
     # Register services
     hass.services.async_register(
         DOMAIN,
@@ -128,20 +107,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
     entry.async_on_unload(unsub)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
-    # Listen for manual rain block state changes
-    @callback
-    def _manual_rain_block_listener(event: Event) -> None:
-        entity_id = event.data.get("entity_id")
-        if entity_id == helper_entity_id:
-            new_state = event.data.get("new_state")
-            if new_state:
-                is_on = new_state.state == "on"
-                coordinator.set_runtime_manual_rain_block(is_on)
-                _LOGGER.info(f"[MANUAL] Manual rain block state changed: {is_on}")
-
-    unsub_manual_block = hass.bus.async_listen(EVENT_STATE_CHANGED, _manual_rain_block_listener)
-    entry.async_on_unload(unsub_manual_block)
-
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     _LOGGER.info("Hunter Irrigation initialized with %s zones", len(coordinator.zone_by_name))
@@ -160,7 +125,8 @@ async def _async_migrate_entity_ids(hass: HomeAssistant) -> None:
         "sensor.hunter_irrigation_rain_guard_duvod": "sensor.hunter_irrigation_rain_guard_reason",
         "sensor.hunter_irrigation_srazky_za_poslednich_24_hodin": "sensor.hunter_irrigation_rain_last_24_hours_total",
         "sensor.hunter_irrigation_srazky_za_poslednich_48_hodin": "sensor.hunter_irrigation_rain_last_48_hours_total",
-        "number.hunter_irrigation_prah_srazek_24_h": "number.hunter_irrigation_rain_threshold",
+        "number.hunter_irrigation_prah_srazek_24_h": "number.hunter_irrigation_rain_threshold_24h",
+        "number.hunter_irrigation_rain_threshold": "number.hunter_irrigation_rain_threshold_24h",
         "number.hunter_irrigation_prah_srazek_48_h": "number.hunter_irrigation_rain_threshold_48h",
     }
 
@@ -336,9 +302,11 @@ class HunterIrrigation:
         threshold_entity = self.rain_config.get(CONF_RAIN_THRESHOLD_ENTITY)
         threshold_from_entity = self._read_float_sensor(threshold_entity)
         if threshold_from_entity is None:
-            threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_prah_srazek_24_h")
+            threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_rain_threshold_24h")
         if threshold_from_entity is None:
-            threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_rain_threshold")
+                threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_prah_srazek_24_h")
+            if threshold_from_entity is None:
+                threshold_from_entity = self._read_float_sensor("number.hunter_irrigation_rain_threshold")
         threshold_24h = (
             float(threshold_from_entity)
             if threshold_from_entity is not None

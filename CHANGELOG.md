@@ -6,6 +6,21 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.22] - 2026-05-14
+
+### Opraveno
+- Finální sjednocení threshold entit: 24h threshold je nyní pouze `number.hunter_irrigation_rain_threshold_24h`.
+- Zachována finální 48h threshold entita `number.hunter_irrigation_rain_threshold_48h`.
+- Doplňena a sjednocena migrace historických ID (`prah_srazek_24_h`, staré `rain_threshold`) na `rain_threshold_24h`.
+- Dashboard modern verze používá pouze finální EN entity pro limity srážek.
+
+### Přidáno
+- Nativní runtime přepínač `switch.hunter_irrigation_manual_rain_block` přímo v integraci (bez externího helperu).
+- Lokalizace názvu `manual_rain_block` v `cs` i `en` překladech.
+
+### Změněno
+- Dokumentace byla sjednocena na finální entity ID (EN) pro thresholdy i ruční blokaci deště.
+
 ## [1.0.21] - 2025-05-14
 
 ### Opraveno (KRITICKÉ)

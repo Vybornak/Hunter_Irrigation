@@ -31,6 +31,12 @@ async def async_setup_entry(
                 key="simulate",
                 icon="mdi:eye-off",
             ),
+            HunterRuntimeFlagSwitch(
+                coordinator=coordinator,
+                entry_id=entry.entry_id,
+                key="manual_rain_block",
+                icon="mdi:cloud-lock",
+            ),
         ]
     )
 
@@ -64,18 +70,24 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
     def is_on(self) -> bool:
         if self._key == "manual_override":
             return self._coordinator.runtime_manual_override
-        return self._coordinator.runtime_simulate
+        if self._key == "simulate":
+            return self._coordinator.runtime_simulate
+        return self._coordinator.runtime_manual_rain_block
 
     async def async_turn_on(self, **kwargs) -> None:
         if self._key == "manual_override":
             self._coordinator.set_runtime_manual_override(True)
-        else:
+        elif self._key == "simulate":
             self._coordinator.set_runtime_simulate(True)
+        else:
+            self._coordinator.set_runtime_manual_rain_block(True)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
         if self._key == "manual_override":
             self._coordinator.set_runtime_manual_override(False)
-        else:
+        elif self._key == "simulate":
             self._coordinator.set_runtime_simulate(False)
+        else:
+            self._coordinator.set_runtime_manual_rain_block(False)
         self.async_write_ha_state()

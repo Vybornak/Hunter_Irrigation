@@ -292,6 +292,7 @@ class HunterRainGuardStatusSensor(SensorEntity):
             return "manualni override"
 
         reason_map = {
+            "manual_rain_block": "blokovano: rucni blokace deste",
             "rain_24h_threshold": "blokovano: srazky za 24 hodin",
             "rain_48h_threshold": "blokovano: srazky za 48 hodin",
             "instant_rain": "blokovano: prave prsi",
