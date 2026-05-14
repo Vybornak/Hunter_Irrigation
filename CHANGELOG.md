@@ -6,6 +6,15 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.23] - 2026-05-14
+
+### Opraveno
+- Opraven `IndentationError` v `__init__.py`, který způsoboval pád Hassfest validace.
+- Dokončeno vydání po úspěšné CI validaci, aby byla nová verze dostupná v distribuci.
+
+### Stabilizováno
+- Release pipeline je nyní spouštěna z funkčního `gh` CLI prostředí.
+
 ## [1.0.22] - 2026-05-14
 
 ### Opraveno
