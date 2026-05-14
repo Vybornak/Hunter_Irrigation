@@ -6,6 +6,12 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.31] - 2026-05-14
+
+### Změněno
+- Dashboard: přesunuty informace o dalších cyklech a stavu do badges, odstraněny nastavení blokace.
+- Opravena česká diakritika v dashboard příkladě.
+
 ## [1.0.30] - 2026-05-14
 
 ### Opraveno
