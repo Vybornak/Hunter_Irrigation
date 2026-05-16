@@ -188,12 +188,18 @@ class HunterIrrigation:
         )
         self.active_timers: dict[str, callback] = {}
         self._manual_rain_block_suspended_switches: set[str] = set()
+        self._rain_block_suspended_switches: set[str] = set()
 
     def set_zone_runtime_duration(self, zone_name: str, duration_min: float) -> None:
         self.zone_runtime_duration[zone_name] = float(duration_min)
 
     def set_runtime_manual_override(self, enabled: bool) -> None:
         self.runtime_manual_override = enabled
+
+    async def async_set_runtime_manual_override(self, enabled: bool) -> None:
+        """Set manual override and immediately re-evaluate rain guard switch state."""
+        self.set_runtime_manual_override(enabled)
+        await self.async_enforce_rain_guard()
 
     def set_runtime_manual_rain_block(self, enabled: bool) -> None:
         """Enable/disable manual rain block for testing without real rainfall."""
@@ -349,10 +355,73 @@ class HunterIrrigation:
     async def async_set_runtime_rain_threshold(self, threshold_mm: float) -> None:
         self.runtime_rain_threshold = float(threshold_mm)
         await self._async_persist_rain_thresholds()
+        await self.async_enforce_rain_guard()
 
     async def async_set_runtime_rain_threshold_48h(self, threshold_mm: float) -> None:
         self.runtime_rain_threshold_48h = float(threshold_mm)
         await self._async_persist_rain_thresholds()
+        await self.async_enforce_rain_guard()
+
+    async def async_enforce_rain_guard(self) -> None:
+        """Keep automatic watering switches aligned with current rain guard state."""
+        if self.runtime_manual_rain_block:
+            # Manual rain block has its own switch tracking and restoration behavior.
+            _LOGGER.debug("[BLOCK] Skipping rain guard enforcement because manual rain block is active")
+            return
+
+        blocked, rain_state = self._is_rain_blocked()
+        manual_override = self._is_manual_override()
+        effective_block = blocked and not manual_override
+
+        if effective_block:
+            for _, auto_switch in self._iter_zone_auto_switches():
+                state = self.hass.states.get(auto_switch)
+                if state is None:
+                    _LOGGER.debug("[BLOCK] Auto switch %s not found during rain enforcement", auto_switch)
+                    continue
+                if state.state != "on":
+                    continue
+                try:
+                    await self.hass.services.async_call(
+                        "switch",
+                        "turn_off",
+                        {CONF_ENTITY_ID: auto_switch},
+                        blocking=True,
+                    )
+                    self._rain_block_suspended_switches.add(auto_switch)
+                    _LOGGER.info(
+                        "[BLOCK] Auto switch %s suspended by rain guard (%s)",
+                        auto_switch,
+                        rain_state.get("rain_block_reason"),
+                    )
+                except Exception as err:
+                    _LOGGER.warning("[BLOCK] Failed to suspend %s via rain guard: %s", auto_switch, err)
+            return
+
+        # Rain block is not effective (either unblocked, or manual override enabled):
+        # restore only switches previously turned off by rain guard.
+        resume_switches = sorted(self._rain_block_suspended_switches)
+        if not resume_switches:
+            return
+
+        self._rain_block_suspended_switches.clear()
+        for auto_switch in resume_switches:
+            state = self.hass.states.get(auto_switch)
+            if state is None:
+                _LOGGER.debug("[UNBLOCK] Auto switch %s missing while restoring rain guard", auto_switch)
+                continue
+            if state.state != "off":
+                continue
+            try:
+                await self.hass.services.async_call(
+                    "switch",
+                    "turn_on",
+                    {CONF_ENTITY_ID: auto_switch},
+                    blocking=True,
+                )
+                _LOGGER.info("[UNBLOCK] Auto switch %s restored after rain guard", auto_switch)
+            except Exception as err:
+                _LOGGER.warning("[UNBLOCK] Failed to restore %s after rain guard: %s", auto_switch, err)
 
     def _get_zone_config(
         self, zone_name: str | None, entity_id: str | None

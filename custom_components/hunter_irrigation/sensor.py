@@ -45,7 +45,7 @@ async def async_setup_entry(
         return
 
     _LOGGER.info(f"[RAIN] Setting up coordinator for sensor: {daily_rain_sensor}")
-    coordinator = HunterRainStatsCoordinator(hass, daily_rain_sensor)
+    coordinator = HunterRainStatsCoordinator(hass, daily_rain_sensor, runtime)
     
     _LOGGER.info("[RAIN] Calling first_refresh to load data immediately...")
     try:
@@ -69,7 +69,7 @@ async def async_setup_entry(
 class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]]):
     """Coordinator computing rainfall rollups from recorder history."""
 
-    def __init__(self, hass: HomeAssistant, entity_id: str) -> None:
+    def __init__(self, hass: HomeAssistant, entity_id: str, runtime: Any) -> None:
         super().__init__(
             hass,
             _LOGGER,
@@ -77,6 +77,7 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
             update_interval=timedelta(minutes=1),
         )
         self._entity_id = entity_id
+        self._runtime = runtime
         _LOGGER.info(f"[RAIN] Coordinator initialized for {entity_id}")
 
     def _sum_cumulative_states(self, states: list[Any]) -> float | None:
@@ -204,6 +205,10 @@ class HunterRainStatsCoordinator(DataUpdateCoordinator[dict[str, float | None]])
                 "rain_last_24_hours_total": rain_24h,
                 "rain_last_48_hours_total": rain_48h,
             }
+
+            # Keep zone auto switches aligned even without a manual start request.
+            await self._runtime.async_enforce_rain_guard()
+
             _LOGGER.info(f"[RAIN] RESULT: {result}")
             _LOGGER.info(f"[RAIN] ==== UPDATE END (SUCCESS) ====")
             return result

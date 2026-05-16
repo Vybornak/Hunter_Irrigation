@@ -6,6 +6,13 @@ Formát vychází z Keep a Changelog a Semantic Versioning.
 
 ## [Nevydáno]
 
+## [1.0.34] - 2026-05-16
+
+### Opraveno
+- Rain guard při blokaci deště nyní aktivně vypíná `switch.<zona>_automatic_watering` i bez ručního spuštění zóny (periodická synchronizace přes rain coordinator).
+- Po odblokování deště se obnovují jen ty auto-switche, které rain guard skutečně vypnul, aby se nepřepisovaly nezávislé ruční stavy.
+- Přepnutí `manual_override` nyní okamžitě přehodnotí a aplikuje stav rain guardu.
+
 ## [1.0.33] - 2026-05-14
 
 ### Opraveno

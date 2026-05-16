@@ -81,7 +81,7 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
     async def async_turn_on(self, **kwargs) -> None:
         _LOGGER.info("[MANUAL] Switch %s turn_on requested", self.entity_id)
         if self._key == "manual_override":
-            self._coordinator.set_runtime_manual_override(True)
+            await self._coordinator.async_set_runtime_manual_override(True)
         elif self._key == "simulate":
             self._coordinator.set_runtime_simulate(True)
         else:
@@ -92,7 +92,7 @@ class HunterRuntimeFlagSwitch(SwitchEntity):
     async def async_turn_off(self, **kwargs) -> None:
         _LOGGER.info("[MANUAL] Switch %s turn_off requested", self.entity_id)
         if self._key == "manual_override":
-            self._coordinator.set_runtime_manual_override(False)
+            await self._coordinator.async_set_runtime_manual_override(False)
         elif self._key == "simulate":
             self._coordinator.set_runtime_simulate(False)
         else:
