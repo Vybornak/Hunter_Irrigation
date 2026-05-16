@@ -16,6 +16,7 @@
         "Get-Command": true,
         "git config": true,
         "git pull": true,
-        "git fetch": true
+        "git fetch": true,
+        "Test-Path": true
     }
 }
